@@ -1,0 +1,757 @@
+#:import Animation kivy.animation.Animation
+#:import get_color_from_hex kivy.utils.get_color_from_hex
+
+<Lotto4StarResultRow@BoxLayout>:
+    orientation: 'vertical'
+    size_hint_y: None
+    height: self.minimum_height
+    spacing: dp(5)
+
+    BoxLayout:
+        size_hint_y: None
+        height: dp(20)
+        Label:
+            id: period_label
+            text: ''
+            font_name: 'ChineseFont'
+            font_size: '12sp'
+            halign: 'left'
+            valign: 'middle'
+            text_size: self.size
+            size_hint_x: None
+            width: dp(140)
+        Label:
+            id: date_label
+            text: ''
+            font_name: 'ChineseFont'
+            font_size: '12sp'
+            halign: 'left'
+            valign: 'middle'
+            text_size: self.size
+
+    BoxLayout:
+        size_hint_y: None
+        height: dp(40)
+        GridLayout:
+            id: winning_nums_layout
+            cols: 4
+            spacing: dp(5)
+        Label:
+            id: prize_label
+            text: ''
+            font_name: 'ChineseFont'
+            font_size: '18sp'
+            color: 1, 0, 0, 1
+            size_hint_x: None
+            width: dp(40)
+            halign: 'center'
+            valign: 'middle'
+
+<Lotto4StarQueryScreen>:
+    name: 'lotto4star'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(10)
+        spacing: dp(5)
+        
+        # 標題區
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: dp(90)  # 標題和說明文字高度
+            
+            # 主標題
+            Label:
+                text: '四星彩選號查詢'
+                font_name: 'ChineseFont'
+                font_size: dp(24)
+                bold: True
+                size_hint_y: None
+                height: dp(35)
+                color: get_color_from_hex('#FFC107')
+                halign: 'center'
+            
+            # 說明文字
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint_y: None
+                height: dp(50)
+                padding: (dp(5), 0)
+                
+                Label:
+                    text: '可輸入任意位數組合，'
+                    font_name: 'ChineseFont'
+                    font_size: dp(12)
+                    size_hint_y: None
+                    height: dp(20)
+                    color: get_color_from_hex('#BBBBBB')
+                    halign: 'center'
+                
+                Label:
+                    text: '查詢其在歷史開獎獎號中出現的次數及中獎獎別。'
+                    font_name: 'ChineseFont'
+                    font_size: dp(12)
+                    size_hint_y: None
+                    height: dp(20)
+                    color: get_color_from_hex('#BBBBBB')
+                    halign: 'center'
+        
+        # 主內容區域
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: dp(5)
+            size_hint_y: 1  # 佔用剩餘空間
+            
+            # 四位數選號區域
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint_y: None
+                height: dp(280)
+                spacing: dp(8)
+                padding: dp(5)
+                
+                # 仟位
+                BoxLayout:
+                    orientation: 'vertical'
+                    spacing: dp(5)
+                    
+                    Label:
+                        text: '仟'
+                        font_name: 'ChineseFont'
+                        font_size: dp(18)
+                        bold: True
+                        size_hint_y: None
+                        height: dp(30)
+                        color: get_color_from_hex('#FFC107')
+                        halign: 'center'
+                    
+                    GridLayout:
+                        id: thousands_grid
+                        cols: 1
+                        rows: 10
+                        spacing: dp(3)
+                        size_hint_y: None
+                        height: dp(240)
+                
+                # 佰位
+                BoxLayout:
+                    orientation: 'vertical'
+                    spacing: dp(5)
+                    
+                    Label:
+                        text: '佰'
+                        font_name: 'ChineseFont'
+                        font_size: dp(18)
+                        bold: True
+                        size_hint_y: None
+                        height: dp(30)
+                        color: get_color_from_hex('#FFC107')
+                        halign: 'center'
+                    
+                    GridLayout:
+                        id: hundreds_grid
+                        cols: 1
+                        rows: 10
+                        spacing: dp(3)
+                        size_hint_y: None
+                        height: dp(240)
+                
+                # 拾位
+                BoxLayout:
+                    orientation: 'vertical'
+                    spacing: dp(5)
+                    
+                    Label:
+                        text: '拾'
+                        font_name: 'ChineseFont'
+                        font_size: dp(18)
+                        bold: True
+                        size_hint_y: None
+                        height: dp(30)
+                        color: get_color_from_hex('#FFC107')
+                        halign: 'center'
+                    
+                    GridLayout:
+                        id: tens_grid
+                        cols: 1
+                        rows: 10
+                        spacing: dp(3)
+                        size_hint_y: None
+                        height: dp(240)
+                
+                # 個位
+                BoxLayout:
+                    orientation: 'vertical'
+                    spacing: dp(5)
+                    
+                    Label:
+                        text: '個'
+                        font_name: 'ChineseFont'
+                        font_size: dp(18)
+                        bold: True
+                        size_hint_y: None
+                        height: dp(30)
+                        color: get_color_from_hex('#FFC107')
+                        halign: 'center'
+                    
+                    GridLayout:
+                        id: units_grid
+                        cols: 1
+                        rows: 10
+                        spacing: dp(3)
+                        size_hint_y: None
+                        height: dp(240)
+            
+            # 添加空白區域確保按鈕不會被擠壓
+            Widget:
+                size_hint_y: 1
+        
+        # 固定在底部的功能按鈕區域
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: dp(80)  # 調整為與大樂透一致的高度
+            spacing: dp(5)
+            
+            # 第一行按鈕
+            BoxLayout:
+                spacing: dp(5)
+                size_hint_y: None
+                height: dp(45)
+                
+                Button:
+                    text: '取消選取'
+                    font_name: 'ChineseFont'
+                    font_size: dp(14)
+                    background_color: get_color_from_hex('#F44336')
+                    on_press: root.clear_selection()
+                
+                Button:
+                    text: '選號查詢'
+                    font_name: 'ChineseFont'
+                    font_size: dp(14)
+                    background_color: get_color_from_hex('#4CAF50')
+                    on_press: root.query_history()
+            
+            # 第二行按鈕
+            BoxLayout:
+                spacing: dp(5)
+                size_hint_y: None
+                height: dp(45)
+                
+                Button:
+                    text: '回彩券選擇'
+                    font_name: 'ChineseFont'
+                    font_size: dp(14)
+                    background_color: get_color_from_hex('#9C27B0')
+                    on_press: root.manager.current = 'lottery_type'
+                
+                Button:
+                    text: '儲存自選號'
+                    font_name: 'ChineseFont'
+                    font_size: dp(14)
+                    background_color: get_color_from_hex('#2196F3')
+                    on_press: root.save_custom_numbers()
+                
+                Button:
+                    text: '提取自選號'
+                    font_name: 'ChineseFont'
+                    font_size: dp(14)
+                    background_color: get_color_from_hex('#FF9800')
+                    on_press: root.show_saved_numbers()
+            
+            # 第三行按鈕
+            BoxLayout:
+                spacing: dp(5)
+                size_hint_y: None
+                height: dp(45)
+                
+                Button:
+                    text: '查重複四碼'
+                    font_name: 'ChineseFont'
+                    font_size: dp(14)
+                    background_color: get_color_from_hex('#607D8B')
+                    on_press: root.query_repeated_numbers()
+
+                Button:
+                    text: '自選號中獎詳情'
+                    font_name: 'ChineseFont'
+                    font_size: dp(14)
+                    background_color: get_color_from_hex('#009688')
+                    on_press: root.query_winning_details()
+
+        AdBannerArea:
+            id: ad_banner
+
+<Lotto4StarResultsScreen>:
+    name: 'lotto4star_results'
+    sort_order: 'DESC'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(10)
+        spacing: dp(5)
+        
+        # Top bar - 比照三星彩的頂部設計
+        BoxLayout:
+            size_hint_y: None
+            height: dp(40)
+            Button:
+                text: '返回'
+                font_name: 'ChineseFont'
+                size_hint_x: 0.2
+                on_press: root.go_back()
+            Label:
+                text: '四星彩查詢結果'
+                font_name: 'ChineseFont'
+                font_size: dp(20)
+                bold: True
+                size_hint_x: 0.6
+                color: get_color_from_hex('#FFC107')
+                halign: 'center'
+            Button:
+                id: sort_btn
+                text: '排序: ' + ('降序' if root.sort_order == 'DESC' else '升序')
+                font_name: 'ChineseFont'
+                size_hint_x: 0.2
+                on_press: root.toggle_sort_order()
+        
+        # Selected numbers - 比照三星彩的自選號顯示
+        BoxLayout:
+            size_hint_y: None
+            height: dp(50)
+            padding: (0, dp(5), 0, 0)
+            Label:
+                text: '自選號：'
+                font_name: 'ChineseFont'
+                size_hint_x: None
+                width: dp(80)
+                valign: 'bottom'
+            GridLayout:
+                id: selected_nums_layout
+                cols: 4
+                spacing: dp(5)
+                size_hint_x: None
+                width: self.minimum_width
+                pos_hint: {'center_x': 0.5}
+                valign: 'bottom'
+
+        # Prize stats - 比照三星彩的獎別統計設計
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: dp(80)
+
+            # 統計標題
+            BoxLayout:
+                size_hint_y: None
+                height: dp(20)
+                padding: (dp(10), 0)
+                Label:
+                    text: '獎別統計：總筆數'
+                    font_name: 'ChineseFont'
+                    font_size: dp(14)
+                    color: (1, 1, 1, 1)
+                    size_hint_x: None
+                    width: self.texture_size[0]
+                Label:
+                    id: total_count_label
+                    text: '0'
+                    font_name: 'ChineseFont'
+                    font_size: dp(14)
+                    color: (1, 1, 1, 1)
+                    halign: 'left'
+                    valign: 'middle'
+                    text_size: self.size
+
+            # 統計內容區域
+            GridLayout:
+                cols: 6
+                size_hint_y: None
+                height: dp(50)
+                spacing: dp(5)
+                padding: (dp(10), 0)
+
+                Label:
+                    text: '頭獎:'
+                    font_name: 'ChineseFont'
+                    color: get_color_from_hex('#FFFF00')
+                    font_size: dp(14)
+                Label:
+                    id: prize_count_head
+                    text: '0'
+                    font_name: 'ChineseFont'
+                    color: get_color_from_hex('#FFFF00')
+                    font_size: dp(14)
+                Label:
+                    text: '貳獎:'
+                    font_name: 'ChineseFont'
+                    color: get_color_from_hex('#FFFF00')
+                    font_size: dp(14)
+                Label:
+                    id: prize_count_second
+                    text: '0'
+                    font_name: 'ChineseFont'
+                    color: get_color_from_hex('#FFFF00')
+                    font_size: dp(14)
+                Label:
+                    text: '參獎:'
+                    font_name: 'ChineseFont'
+                    color: get_color_from_hex('#FFFF00')
+                    font_size: dp(14)
+                Label:
+                    id: prize_count_third
+                    text: '0'
+                    font_name: 'ChineseFont'
+                    color: get_color_from_hex('#FFFF00')
+                    font_size: dp(14)
+
+        # Separator - 分隔線
+        Widget:
+            size_hint_y: None
+            height: dp(1)
+            canvas:
+                Color:
+                    rgba: 0.5, 0.5, 0.5, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+        # Results list - 結果列表
+        ScrollView:
+            id: scroll_view
+            do_scroll_x: False
+            on_scroll_start: root.on_scroll_start(self, args[1])
+            on_scroll_move: root.on_scroll_move(self, args[1])
+            on_scroll_stop: root.on_scroll_end(self, args[1])
+            BoxLayout:
+                id: results_layout
+                orientation: 'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: dp(2)
+                padding: (dp(5), dp(5))
+
+<Lotto4StarSavedScreen>:
+    name: 'lotto4star_saved'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(10)
+        spacing: dp(10)
+        
+        # 標題和返回按鈕
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: dp(40)
+            spacing: dp(10)
+            
+            Button:
+                text: '返回'
+                font_name: 'ChineseFont'
+                size_hint_x: 0.2
+                on_press: root.back_to_query()
+            
+            Label:
+                text: '四星彩自選號'
+                font_name: 'ChineseFont'
+                font_size: dp(20)
+                bold: True
+                size_hint_x: 0.6
+                color: get_color_from_hex('#FFC107')
+                halign: 'center'
+            
+            Label:
+                text: f"總數: {len(root.saved_numbers) if root.saved_numbers else 0}"
+                font_name: 'ChineseFont'
+                size_hint_x: 0.2
+                halign: 'center'
+        
+        # 說明文字
+        Label:
+            text: '點選自選號可帶回選號頁面，長按可刪除'
+            font_name: 'ChineseFont'
+            font_size: dp(12)
+            size_hint_y: None
+            height: dp(30)
+            color: get_color_from_hex('#BBBBBB')
+            halign: 'center'
+        
+        # 自選號列表
+        ScrollView:
+            id: scroll_view
+            do_scroll_x: False
+            do_scroll_y: True
+            
+            # 綁定滾動事件檢測
+            on_scroll_start: root.on_scroll_start(self, args[1]) if hasattr(root, 'on_scroll_start') else None
+            on_scroll_move: root.on_scroll_move(self, args[1]) if hasattr(root, 'on_scroll_move') else None
+            on_scroll_stop: root.on_scroll_end(self, args[1]) if hasattr(root, 'on_scroll_end') else None
+            
+            GridLayout:
+                id: saved_list
+                cols: 1
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: dp(5)
+
+<Lotto4StarRepeatedNumbersScreen>:
+    name: 'lotto4star_repeated_numbers'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(10)
+        spacing: dp(10)
+        
+        # 標題和返回按鈕
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: dp(40)
+            spacing: dp(10)
+            
+            Button:
+                text: '返回'
+                font_name: 'ChineseFont'
+                size_hint_x: None
+                width: dp(60)
+                on_press: root.back_to_query()
+            
+            Label:
+                text: '四星彩重複四碼'
+                font_name: 'ChineseFont'
+                font_size: dp(20)
+                bold: True
+                color: get_color_from_hex('#FFC107')
+                halign: 'center'
+        
+        # 說明文字和總筆數
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: dp(30)
+            spacing: dp(10)
+            
+            Label:
+                id: total_count_label
+                text: '總筆數: 0'
+                font_name: 'ChineseFont'
+                font_size: dp(12)
+                color: get_color_from_hex('#BBBBBB')
+                size_hint_x: None
+                width: dp(80)
+                halign: 'left'
+                valign: 'middle'
+                text_size: self.size
+            
+            Label:
+                text: '點選重複號碼可查看詳細記錄'
+                font_name: 'ChineseFont'
+                font_size: dp(12)
+                color: get_color_from_hex('#BBBBBB')
+                halign: 'center'
+                valign: 'middle'
+        
+        # 重複號碼列表
+        ScrollView:
+            id: scroll_view
+            do_scroll_x: False
+            on_scroll_start: root.on_scroll_start(self, args[1])
+            on_scroll_move: root.on_scroll_move(self, args[1])
+            on_scroll_stop: root.on_scroll_end(self, args[1])
+            GridLayout:
+                id: duplicate_list
+                cols: 1
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: dp(5)
+
+<Lotto4StarDuplicateDetailScreen>:
+    name: 'lotto4star_duplicate_detail'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(10)
+        spacing: dp(10)
+        
+        # 標題和返回按鈕
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: dp(40)
+            spacing: dp(10)
+            
+            Button:
+                text: '返回'
+                font_name: 'ChineseFont'
+                size_hint_x: None
+                width: dp(60)
+                on_press: root.back_to_duplicate()
+                
+            Label:
+                text: '四星彩重複記錄詳情'
+                font_name: 'ChineseFont'
+                font_size: dp(18)
+                bold: True
+                color: get_color_from_hex('#FFC107')
+                halign: 'center'
+                valign: 'middle'
+        
+        # 詳細記錄列表
+        ScrollView:
+            id: detail_scroll
+            do_scroll_x: False
+            on_scroll_start: root.on_scroll_start(self, args[1])
+            on_scroll_move: root.on_scroll_move(self, args[1])
+            on_scroll_stop: root.on_scroll_end(self, args[1])
+            GridLayout:
+                id: detail_list
+                cols: 1
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: dp(5)
+
+<Lotto4StarWinningDetailsScreen>:
+    name: 'lotto4star_winning_details'
+    sort_order: 'DESC'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(10)
+        spacing: dp(5)
+        
+        # Top bar - 比照三星彩的頂部設計
+        BoxLayout:
+            size_hint_y: None
+            height: dp(40)
+            Button:
+                text: '返回'
+                font_name: 'ChineseFont'
+                size_hint_x: 0.2
+                on_press: root.go_back()
+            Label:
+                text: '四星彩自選號中獎詳情'
+                font_name: 'ChineseFont'
+                font_size: dp(20)
+                bold: True
+                size_hint_x: 0.6
+                color: get_color_from_hex('#FFC107')
+                halign: 'center'
+            Button:
+                id: sort_btn
+                text: '排序: ' + ('降序' if root.sort_order == 'DESC' else '升序')
+                font_name: 'ChineseFont'
+                size_hint_x: 0.2
+                on_press: root.toggle_sort_order()
+        
+        # Selected numbers - 比照三星彩的自選號顯示
+        BoxLayout:
+            size_hint_y: None
+            height: dp(50)
+            padding: (0, dp(5), 0, 0)
+            Label:
+                text: '自選號：'
+                font_name: 'ChineseFont'
+                size_hint_x: None
+                width: dp(80)
+                valign: 'bottom'
+            GridLayout:
+                id: selected_nums_layout
+                cols: 4
+                spacing: dp(5)
+                size_hint_x: None
+                width: self.minimum_width
+                pos_hint: {'center_x': 0.5}
+                valign: 'bottom'
+
+        # Prize stats - 比照三星彩的獎別統計設計
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: dp(80)
+
+            # 統計標題
+            BoxLayout:
+                size_hint_y: None
+                height: dp(20)
+                padding: (dp(10), 0)
+                Label:
+                    text: '獎別統計：總筆數'
+                    font_name: 'ChineseFont'
+                    font_size: dp(14)
+                    color: (1, 1, 1, 1)
+                    size_hint_x: None
+                    width: self.texture_size[0]
+                Label:
+                    id: total_count_label
+                    text: '0'
+                    font_name: 'ChineseFont'
+                    font_size: dp(14)
+                    color: (1, 1, 1, 1)
+                    halign: 'left'
+                    valign: 'middle'
+                    text_size: self.size
+
+            # 統計內容區域
+            GridLayout:
+                cols: 6
+                size_hint_y: None
+                height: dp(50)
+                spacing: dp(5)
+                padding: (dp(10), 0)
+
+                Label:
+                    text: '頭獎:'
+                    font_name: 'ChineseFont'
+                    color: get_color_from_hex('#FFFF00')
+                    font_size: dp(14)
+                Label:
+                    id: prize_count_head
+                    text: '0'
+                    font_name: 'ChineseFont'
+                    color: get_color_from_hex('#FFFF00')
+                    font_size: dp(14)
+                Label:
+                    text: '貳獎:'
+                    font_name: 'ChineseFont'
+                    color: get_color_from_hex('#FFFF00')
+                    font_size: dp(14)
+                Label:
+                    id: prize_count_second
+                    text: '0'
+                    font_name: 'ChineseFont'
+                    color: get_color_from_hex('#FFFF00')
+                    font_size: dp(14)
+                Label:
+                    text: '參獎:'
+                    font_name: 'ChineseFont'
+                    color: get_color_from_hex('#FFFF00')
+                    font_size: dp(14)
+                Label:
+                    id: prize_count_third
+                    text: '0'
+                    font_name: 'ChineseFont'
+                    color: get_color_from_hex('#FFFF00')
+                    font_size: dp(14)
+
+        # Separator - 分隔線
+        Widget:
+            size_hint_y: None
+            height: dp(1)
+            canvas:
+                Color:
+                    rgba: 0.5, 0.5, 0.5, 1
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+        # Results list - 結果列表
+        ScrollView:
+            id: scroll_view
+            do_scroll_x: False
+            on_scroll_start: root.on_scroll_start(self, args[1])
+            on_scroll_move: root.on_scroll_move(self, args[1])
+            on_scroll_stop: root.on_scroll_end(self, args[1])
+            BoxLayout:
+                id: results_layout
+                orientation: 'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: dp(2)
+                padding: (dp(5), dp(5))

@@ -1,0 +1,12 @@
+images/
+├── 好運自己選.png        # 主標題圖片
+├── 威力彩.png           # 正常狀態
+├── 威力彩_pressed.png    # 按下狀態
+├── 大樂透.png
+├── 大樂透_pressed.png
+├── 今彩539.png
+├── 今彩539_pressed.png
+├── 3星彩.png
+├── 3星彩_pressed.png
+├── 4星彩.png
+└── 4星彩_pressed.png

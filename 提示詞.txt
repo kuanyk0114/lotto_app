@@ -1,0 +1,5 @@
+在我的專案資料夾子目錄doc內有context.md記錄專案的說明，包括那些已完成未完成的項目，architecture.md為專案檔案架構及資料庫結構說明，請先參考這兩檔案，瞭解我的專案後再和我討論下一步要做什麼
+
+連線SupaBase更新獎號功能已完成，接下還有APP版本更新、加入Google AdMob廣告平台，及Microsoft Store、Google Play、Apple App Store等平台的程式轉換並上架，請告訴我具體可執行的步驟
+
+因考慮到我的程式要同時上架Microsoft Store、Google Play、Apple App Store,那APP版本更新功能可以做嗎?

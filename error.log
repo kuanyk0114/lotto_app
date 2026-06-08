@@ -1,0 +1,108 @@
+2026-06-03 13:57:41,906 - modules.sync - ERROR - Error downloading CSV file 202511.csv: {'statusCode': 404, 'error': not_found, 'message': Object not found}
+Traceback (most recent call last):
+  File "C:\Users\zorro\AppData\Local\Programs\Python\Python313\Lib\site-packages\storage3\_sync\file_api.py", line 80, in _request
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\zorro\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx\_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Client error '400 Bad Request' for url 'https://wyyiyuinfgbqbeykenin.supabase.co/storage/v1/object/lotto_new_number/202511.csv'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\我的專案\台彩程式\lotto_app\modules\sync.py", line 133, in download_csv_file
+    data_bytes = self.client.storage.from_(self.bucket_id).download(file_name)
+  File "C:\Users\zorro\AppData\Local\Programs\Python\Python313\Lib\site-packages\storage3\_sync\file_api.py", line 483, in download
+    response = self._request(
+        "GET",
+    ...<4 lines>...
+        },
+    )
+  File "C:\Users\zorro\AppData\Local\Programs\Python\Python313\Lib\site-packages\storage3\_sync\file_api.py", line 84, in _request
+    raise StorageApiError(
+        resp["message"], resp["error"], resp["statusCode"]
+    ) from exc
+storage3.exceptions.StorageApiError: {'statusCode': 404, 'error': not_found, 'message': Object not found}
+2026-06-03 13:57:41,942 - modules.sync_ui - ERROR - Download failed for 202511.csv: {'statusCode': 404, 'error': not_found, 'message': Object not found}
+2026-06-03 13:57:51,594 - modules.sync - ERROR - Error downloading CSV file 202511.csv: {'statusCode': 404, 'error': not_found, 'message': Object not found}
+Traceback (most recent call last):
+  File "C:\Users\zorro\AppData\Local\Programs\Python\Python313\Lib\site-packages\storage3\_sync\file_api.py", line 80, in _request
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\zorro\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx\_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Client error '400 Bad Request' for url 'https://wyyiyuinfgbqbeykenin.supabase.co/storage/v1/object/lotto_new_number/202511.csv'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\我的專案\台彩程式\lotto_app\modules\sync.py", line 133, in download_csv_file
+    data_bytes = self.client.storage.from_(self.bucket_id).download(file_name)
+  File "C:\Users\zorro\AppData\Local\Programs\Python\Python313\Lib\site-packages\storage3\_sync\file_api.py", line 483, in download
+    response = self._request(
+        "GET",
+    ...<4 lines>...
+        },
+    )
+  File "C:\Users\zorro\AppData\Local\Programs\Python\Python313\Lib\site-packages\storage3\_sync\file_api.py", line 84, in _request
+    raise StorageApiError(
+        resp["message"], resp["error"], resp["statusCode"]
+    ) from exc
+storage3.exceptions.StorageApiError: {'statusCode': 404, 'error': not_found, 'message': Object not found}
+2026-06-03 13:57:51,595 - modules.sync_ui - ERROR - Download failed for 202511.csv: {'statusCode': 404, 'error': not_found, 'message': Object not found}
+2026-06-03 14:04:57,881 - modules.sync - ERROR - Error downloading CSV file 202511.csv: {'statusCode': 404, 'error': not_found, 'message': Object not found}
+Traceback (most recent call last):
+  File "C:\Users\zorro\AppData\Local\Programs\Python\Python313\Lib\site-packages\storage3\_sync\file_api.py", line 80, in _request
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\zorro\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx\_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Client error '400 Bad Request' for url 'https://wyyiyuinfgbqbeykenin.supabase.co/storage/v1/object/lotto_new_number/202511.csv'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\我的專案\台彩程式\lotto_app\modules\sync.py", line 133, in download_csv_file
+    data_bytes = self.client.storage.from_(self.bucket_id).download(file_name)
+  File "C:\Users\zorro\AppData\Local\Programs\Python\Python313\Lib\site-packages\storage3\_sync\file_api.py", line 483, in download
+    response = self._request(
+        "GET",
+    ...<4 lines>...
+        },
+    )
+  File "C:\Users\zorro\AppData\Local\Programs\Python\Python313\Lib\site-packages\storage3\_sync\file_api.py", line 84, in _request
+    raise StorageApiError(
+        resp["message"], resp["error"], resp["statusCode"]
+    ) from exc
+storage3.exceptions.StorageApiError: {'statusCode': 404, 'error': not_found, 'message': Object not found}
+2026-06-03 14:04:57,883 - modules.sync_ui - ERROR - Download failed for 202511.csv: {'statusCode': 404, 'error': not_found, 'message': Object not found}
+2026-06-03 14:05:03,932 - modules.sync - ERROR - Error downloading CSV file 202511.csv: {'statusCode': 404, 'error': not_found, 'message': Object not found}
+Traceback (most recent call last):
+  File "C:\Users\zorro\AppData\Local\Programs\Python\Python313\Lib\site-packages\storage3\_sync\file_api.py", line 80, in _request
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\zorro\AppData\Local\Programs\Python\Python313\Lib\site-packages\httpx\_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Client error '400 Bad Request' for url 'https://wyyiyuinfgbqbeykenin.supabase.co/storage/v1/object/lotto_new_number/202511.csv'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\我的專案\台彩程式\lotto_app\modules\sync.py", line 133, in download_csv_file
+    data_bytes = self.client.storage.from_(self.bucket_id).download(file_name)
+  File "C:\Users\zorro\AppData\Local\Programs\Python\Python313\Lib\site-packages\storage3\_sync\file_api.py", line 483, in download
+    response = self._request(
+        "GET",
+    ...<4 lines>...
+        },
+    )
+  File "C:\Users\zorro\AppData\Local\Programs\Python\Python313\Lib\site-packages\storage3\_sync\file_api.py", line 84, in _request
+    raise StorageApiError(
+        resp["message"], resp["error"], resp["statusCode"]
+    ) from exc
+storage3.exceptions.StorageApiError: {'statusCode': 404, 'error': not_found, 'message': Object not found}
+2026-06-03 14:05:03,933 - modules.sync_ui - ERROR - Download failed for 202511.csv: {'statusCode': 404, 'error': not_found, 'message': Object not found}

@@ -1,0 +1,8 @@
+lotto_history.db是為了測試重復六碼查詢，有故意改成有重復的六碼
+bak\已抽出custom_number的正式db備份\lotto_history.db才是沒修改過的正確資料
+
+db_table_move.py是將custom_number從lotto_history.db抽出，改到custom.db的程式
+
+1141030
+在SupaBase新增資料表data_list記錄要更新的獎號增量檔列表
+在\data\lotto_history.db新增資料表updated_data記錄App內已更新的歷史獎號版號

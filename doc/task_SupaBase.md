@@ -1,0 +1,23 @@
+# Supabase 自動更新開獎獎號任務清單
+
+- `[x]` **1. 建立同步核心模組 (modules/sync.py)**
+    - `[x]` 實作網路狀態檢測 `check_internet(timeout=3)`
+    - `[x]` 實作 SHA-256 哈希值計算 `calculate_sha256(data_bytes)`
+    - `[x]` 實作 `SyncManager` 類別基礎架構與 Supabase 用戶端初始化
+    - `[x]` 實作讀取本地 SQLite 版本號 `get_local_version()`
+    - `[x]` 實作查詢 Supabase 待更新檔案清單 `fetch_remote_updates(local_id)`
+    - `[x]` 實作從 Supabase Storage 下載 CSV 檔案 `download_csv_file(file_name)`
+    - `[x]` 實作解析 CSV 並映射各彩種欄位寫入 SQLite 邏輯（支援 A, U, D 類型）
+    - `[x]` 實作更新本地 `updated_data` 更新記錄 `save_version_to_local(version_id)`
+- `[x]` **2. 實作 Kivy UI 回饋與彈窗 (main.py / modules/common.py)**
+    - `[x]` 建立同步進度指示 Popup (顯示下載、校驗、寫入進度與動態狀態)
+    - `[x]` 建立 SHA-256 驗證失敗的「重試/放棄」雙鈕詢問 Popup
+    - `[x]` 實作執行緒同步鎖 (如 `threading.Event`) 控制背景下載重試與 UI 交互
+- `[x]` **3. 整合啟動流程與背景線程 (main.py)**
+    - `[x]` 在 `main.py` 的 `on_start()` 生命周期中異步調用同步程序
+    - `[x]` 整合背景同步線程與主線程的 UI 元件調度 (透過 `Clock.schedule_once`)
+- `[x]` **4. 測試與驗證 (Verification)**
+    - `[x]` 測試無網路環境下是否能直接略過更新並正常進入 App
+    - `[x]` 測試有網路時，正常將 202506 ~ 202510 的增量 CSV 更新至本地資料庫
+    - `[x]` 驗證本地 SQLite 歷史表與 `updated_data` 最終狀態是否正確
+    - `[x]` 模擬校驗失敗，測試「重試」與「取消」兩種控制路徑是否正確運作

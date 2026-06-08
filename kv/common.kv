@@ -1,0 +1,403 @@
+#:import Animation kivy.animation.Animation
+#:import get_color_from_hex kivy.utils.get_color_from_hex
+
+# 共用樣式定義
+<CommonTitleLabel@Label>:
+    font_name: 'ChineseFont'
+    font_size: dp(24)
+    bold: True
+    size_hint_y: None
+    height: dp(35)
+    color: get_color_from_hex('#FFC107')
+    halign: 'center'
+
+<CommonDescriptionLabel@Label>:
+    font_name: 'ChineseFont'
+    font_size: dp(12)
+    size_hint_y: None
+    height: dp(20)
+    color: get_color_from_hex('#BBBBBB')
+    halign: 'center'
+
+<CommonTitleSection@BoxLayout>:
+    orientation: 'vertical'
+    size_hint_y: None
+    height: dp(90)
+    
+    CommonTitleLabel:
+        text: root.title_text if hasattr(root, 'title_text') else '彩券選號查詢'
+    
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint_y: None
+        height: dp(50)
+        padding: (dp(5), 0)
+        
+        CommonDescriptionLabel:
+            text: '可輸入任意球號組合，'
+        
+        CommonDescriptionLabel:
+            text: '查詢其在歷史開獎獎號中出現的次數及中獎獎別。'
+
+<CommonActionButton@Button>:
+    font_name: 'ChineseFont'
+    size_hint_y: None
+    height: dp(50)
+    background_color: get_color_from_hex('#2196F3')
+
+<CommonBackButton@Button>:
+    text: '返回'
+    font_name: 'ChineseFont'
+    size_hint_y: None
+    height: dp(50)
+    background_color: get_color_from_hex('#757575')
+
+<CommonStatsLabel@Label>:
+    font_name: 'ChineseFont'
+    font_size: dp(14)
+    color: get_color_from_hex('#FFFFFF')
+    halign: 'center'
+    valign: 'middle'
+
+<CommonPeriodLabel@Label>:
+    font_name: 'ChineseFont'
+    font_size: '12sp'
+    size_hint_x: None
+    width: dp(140)
+    halign: 'left'
+    valign: 'middle'
+    text_size: (dp(140), None)
+
+<CommonDateLabel@Label>:
+    font_name: 'ChineseFont'
+    font_size: '12sp'
+    halign: 'left'
+    valign: 'middle'
+
+<LotteryImageButton>:
+    canvas.before:
+        Color:
+            rgba: (0.9, 0.9, 0.9, 1) if self.state == 'down' else (1, 1, 1, 1)
+        Scale:
+            origin: self.center
+            x: self.animation_scale
+            y: self.animation_scale
+    mipmap: True
+    opacity: 0  # 初始不可見，等待動畫
+
+<LotteryTypeScreen>:
+    name: 'lottery_type'
+    
+    canvas.before:
+        Color:
+            rgba: get_color_from_hex('#121212')
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    
+    BoxLayout:
+        orientation: 'vertical'
+        padding: [dp(20), dp(15), dp(20), dp(10)]
+        spacing: dp(10)
+        
+        Image:
+            source: 'images/好運自己選.png'
+            size_hint_y: None
+            height: dp(70)
+            mipmap: True
+        
+        GridLayout:
+            cols: 2
+            spacing: dp(10)
+            size_hint_y: None
+            height: dp(310)
+            
+            LotteryImageButton:
+                id: power_btn
+                source_normal: 'images/威力彩.png'
+                source_down: 'images/威力彩_pressed.png'
+                on_release: root.manager.current = 'power_query'
+            
+            LotteryImageButton:
+                id: big_btn
+                source_normal: 'images/大樂透.png'
+                source_down: 'images/大樂透_pressed.png' 
+                on_release: root.manager.current = 'big_query'
+            
+            LotteryImageButton:
+                id: 539_btn
+                source_normal: 'images/今彩539.png'
+                source_down: 'images/今彩539_pressed.png'
+                on_release: root.manager.current = 'lotto539_query'
+            
+            LotteryImageButton:
+                id: 3star_btn
+                source_normal: 'images/3星彩.png'
+                source_down: 'images/3星彩_pressed.png'
+                on_release: root.manager.current = 'lotto3star'
+            
+            LotteryImageButton:
+                id: 4star_btn
+                source_normal: 'images/4星彩.png'
+                source_down: 'images/4星彩_pressed.png'
+                on_release: root.manager.current = '4star_query'
+        
+        Widget:
+            size_hint_y: 1
+        
+        Label:
+            text: '版本 1.0'
+            font_name: 'ChineseFont'
+            font_size: dp(12)
+            color: get_color_from_hex('#888888')
+            size_hint_y: None
+            height: dp(20)
+        
+        # 隱私權政策及免責聲明按鈕
+        Button:
+            text: '隱私權政策及免責聲明'
+            font_name: 'ChineseFont'
+            font_size: dp(12)
+            color: get_color_from_hex('#CCCCCC')
+            background_color: (0, 0, 0, 0)  # 透明背景
+            size_hint_y: None
+            height: dp(30)
+            on_release: root.show_privacy_policy()
+
+        # 廣告/引流版位
+        AdBannerArea:
+            id: ad_banner
+
+
+<ResultBall>:
+    size_hint: None, None
+    size: dp(30), dp(30)  # 結果頁面的球大小
+
+    canvas.before:
+        Color:
+            rgba: get_color_from_hex('#FFEB3B') # 黃色
+        Ellipse:
+            pos: self.pos
+            size: self.size
+
+    # 使用AnchorLayout確保數字居中
+    AnchorLayout:
+        anchor_x: 'center'
+        anchor_y: 'center'
+        size: root.size
+        Label:
+            text: str(root.number)
+            font_name: 'ChineseFont'
+            font_size: dp(16)
+            color: (0, 0, 0, 1)  # 確保黑色文字
+            bold: True
+
+<LoadingPopup>:
+    title_font: 'ChineseFont'
+    separator_height: 0
+    background_color: (0.2, 0.2, 0.2, 1)
+    
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(20)
+        spacing: dp(10)
+        
+        Label:
+            id: loading_label
+            text: root.title + '.'
+            font_name: 'ChineseFont'
+            font_size: dp(20)
+            halign: 'center'
+            color: get_color_from_hex('#FFFFFF')
+        
+        # 可選的進度條
+        ProgressBar:
+            size_hint_y: None
+            height: dp(5)
+            value: 50  # 靜態值，表示正在處理
+
+
+# ==================== 新增的共用元件 ====================
+
+<AdvancedScrollView@ScrollView>:
+    # 共用滾動容器，自動綁定滾動事件
+    on_scroll_start: root.on_scroll_start(self, args[1]) if hasattr(root, 'on_scroll_start') else None
+    on_scroll_move: root.on_scroll_move(self, args[1]) if hasattr(root, 'on_scroll_move') else None
+    on_scroll_stop: root.on_scroll_end(self, args[1]) if hasattr(root, 'on_scroll_end') else None
+    scroll_type: ['bars', 'content']
+    bar_width: dp(10)
+    bar_color: get_color_from_hex('#888888')
+    bar_inactive_color: get_color_from_hex('#444444')
+
+<LoadMoreIndicator@BoxLayout>:
+    # 載入更多指示器
+    orientation: 'vertical'
+    size_hint_y: None
+    height: dp(60)
+    padding: dp(10), dp(10)
+    
+    Label:
+        text: "滑動到底部載入更多"
+        font_name: 'ChineseFont'
+        font_size: dp(14)
+        color: get_color_from_hex('#888888')
+        halign: 'center'
+        valign: 'middle'
+        opacity: 0.7
+
+<SortButton@Button>:
+    # 統一排序按鈕
+    text: '排序: 降序' if root.sort_order == 'DESC' else '排序: 升序'
+    font_name: 'ChineseFont'
+    font_size: dp(14)
+    size_hint: None, None
+    size: dp(100), dp(40)
+    disabled: root.is_scrolling if hasattr(root, 'is_scrolling') else False
+    on_press: root.toggle_sort_order() if (hasattr(root, 'enable_sort') and root.enable_sort) else None
+    background_color: get_color_from_hex('#4CAF50') if not self.disabled else get_color_from_hex('#888888')
+
+<BaseResultScreen>:
+    # 基礎結果頁面佈局
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: dp(10)
+        padding: dp(10)
+        
+        # 標題區域
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: dp(50)
+            spacing: dp(10)
+            
+            Button:
+                text: '返回'
+                font_name: 'ChineseFont'
+                size_hint: None, None
+                size: dp(80), dp(40)
+                on_press: root.go_back() if hasattr(root, 'go_back') else None
+            
+            Label:
+                text: root.title if hasattr(root, 'title') else '查詢結果'
+                font_name: 'ChineseFont'
+                font_size: dp(18)
+                bold: True
+                halign: 'center'
+            
+            SortButton:
+                id: sort_btn
+        
+        # 統計區域（子類可以覆寫）
+        BoxLayout:
+            id: stats_layout
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: dp(60)
+            spacing: dp(5)
+            padding: dp(5)
+        
+        # 選號顯示區域
+        BoxLayout:
+            id: selected_nums_layout
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: dp(50)
+            spacing: dp(5)
+            padding: dp(5)
+        
+        # 滾動結果區域
+        AdvancedScrollView:
+            id: scroll_view
+            
+            BoxLayout:
+                id: results_layout
+                orientation: 'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: dp(2)
+
+<BaseRepeatedNumbersScreen>:
+    # 重複號碼查詢頁面基礎佈局（無排序按鈕）
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: dp(10)
+        padding: dp(10)
+        
+        # 標題區域
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: dp(50)
+            spacing: dp(10)
+            
+            Button:
+                text: '返回'
+                font_name: 'ChineseFont'
+                size_hint: None, None
+                size: dp(80), dp(40)
+                on_press: root.back_to_query() if hasattr(root, 'back_to_query') else None
+            
+            Label:
+                text: root.title if hasattr(root, 'title') else '重複號碼查詢'
+                font_name: 'ChineseFont'
+                font_size: dp(18)
+                bold: True
+                halign: 'center'
+            
+            # 空白區域（不放排序按鈕）
+            Widget:
+                size_hint: None, None
+                size: dp(100), dp(40)
+        
+        # 統計區域
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: dp(40)
+            spacing: dp(10)
+            padding: dp(10)
+            
+            Label:
+                id: total_count_label
+                text: "總筆數: 0"
+                font_name: 'ChineseFont'
+                font_size: dp(14)
+                size_hint_x: None
+                width: dp(120)
+                halign: 'left'
+        
+        # 滾動結果區域
+        AdvancedScrollView:
+            id: scroll_view
+            
+            BoxLayout:
+                id: duplicate_list
+                orientation: 'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: dp(2)
+
+<PaginationIndicator@BoxLayout>:
+    # 分頁指示器
+    orientation: 'horizontal'
+    size_hint_y: None
+    height: dp(40)
+    spacing: dp(10)
+    padding: dp(10)
+    
+    Label:
+        id: page_info
+        text: "第 1 頁"
+        font_name: 'ChineseFont'
+        font_size: dp(12)
+        size_hint_x: None
+        width: dp(80)
+        halign: 'center'
+    
+    Label:
+        id: total_info
+        text: "共 0 筆"
+        font_name: 'ChineseFont'
+        font_size: dp(12)
+        halign: 'center'
+    
