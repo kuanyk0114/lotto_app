@@ -10,7 +10,7 @@
 > **解決方案**：我們將 `modules/sync.py` 重構為使用 Python 內建/標準的 `requests` 庫直接調用 Supabase REST API 與 Storage API，從而完全移除對 `supabase` 及其關聯套件的依賴。
 > 
 > **2. 簡化 `buildozer.spec` 的 `requirements`**
-> 簡化後的依賴僅需要：`python3, kivy==2.3.1, sqlite3, openssl, requests, urllib3, certifi, idna, charset_normalizer`。這將極大地縮短編譯時間，並徹底消除 Rust 交叉編譯錯誤。
+> 簡化後的依賴僅需要：`python3, kivy==2.3.1, sqlite3, openssl, requests, urllib3, certifi, idna, chardet`。這將極大地縮短編譯時間，並徹底消除 Rust 交叉編譯錯誤。
 > 
 > **3. 繼續使用 GitHub Actions 自動化編譯 (方案 A)**
 > 我們將繼續使用 GitHub Actions 作為打包平台，您只需將修改推送到 GitHub，即可在雲端完成 APK 打包並下載，不佔用本機資源。
@@ -54,7 +54,7 @@ package.domain = com.lottotaiwan
 source.include_exts = py,png,jpg,kv,ttf,json
 
 # 依賴模組 (簡化後的穩定版本)
-requirements = python3,kivy==2.3.1,sqlite3,openssl,requests,urllib3,certifi,idna,charset_normalizer
+requirements = python3,kivy==2.3.1,sqlite3,openssl,requests,urllib3,certifi,idna,chardet
 
 # 應用程式版本
 version = 1.0
