@@ -6,7 +6,7 @@ import csv
 import io
 import logging
 from datetime import datetime
-from supabase import create_client, Client
+# Removed supabase SDK import to prevent Android compilation failures
 
 logger = logging.getLogger(__name__)
 
@@ -44,12 +44,12 @@ class SyncManager:
             self.db_path = db_path
             
         logger.info(f"SyncManager initialized with DB path: {self.db_path}")
+        # Note: self.client is kept for backward compatibility but unused
         self.client = None
         
     def init_client(self):
-        """Lazy initialization of the Supabase Client."""
-        if not self.client:
-            self.client = create_client(self.supabase_url, self.supabase_key)
+        """No-op client initialization (Supabase SDK removed)."""
+        pass
             
     def get_local_version(self):
         """
@@ -138,12 +138,18 @@ class SyncManager:
         """
         self.init_client()
         try:
-            res = self.client.table("app_ver").select("*").execute()
-            if res.data:
-                records = res.data
+            url = f"{self.supabase_url}/rest/v1/app_ver"
+            headers = {
+                "apikey": self.supabase_key,
+                "Authorization": f"Bearer {self.supabase_key}"
+            }
+            res = requests.get(url, headers=headers, timeout=10)
+            res.raise_for_status()
+            data = res.json()
+            if data:
                 # Sort by ver_date descending to get the latest version info
-                records.sort(key=lambda x: x.get('ver_date', ''), reverse=True)
-                latest_ver = records[0].get('ver_num')
+                data.sort(key=lambda x: x.get('ver_date', ''), reverse=True)
+                latest_ver = data[0].get('ver_num')
                 logger.info(f"Latest app version from Supabase: {latest_ver}")
                 return latest_ver
             return None
@@ -158,11 +164,18 @@ class SyncManager:
         """
         self.init_client()
         try:
-            res = self.client.table("data_list").select("*").execute()
+            url = f"{self.supabase_url}/rest/v1/data_list"
+            headers = {
+                "apikey": self.supabase_key,
+                "Authorization": f"Bearer {self.supabase_key}"
+            }
+            res = requests.get(url, headers=headers, timeout=10)
+            res.raise_for_status()
+            data = res.json()
             
             local_id_val = int(local_id)
             updates = []
-            for row in res.data:
+            for row in data:
                 try:
                     row_id_val = int(row['id'])
                     if row_id_val > local_id_val:
@@ -185,8 +198,14 @@ class SyncManager:
         self.init_client()
         try:
             logger.info(f"Downloading {file_name} from bucket {self.bucket_id}")
-            data_bytes = self.client.storage.from_(self.bucket_id).download(file_name)
-            return data_bytes
+            url = f"{self.supabase_url}/storage/v1/object/authenticated/{self.bucket_id}/{file_name}"
+            headers = {
+                "apikey": self.supabase_key,
+                "Authorization": f"Bearer {self.supabase_key}"
+            }
+            res = requests.get(url, headers=headers, timeout=30)
+            res.raise_for_status()
+            return res.content
         except Exception as e:
             logger.exception(f"Error downloading CSV file {file_name}: {e}")
             raise e
