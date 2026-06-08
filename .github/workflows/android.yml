@@ -46,8 +46,8 @@ jobs:
 
     - name: Build Android APK
       run: |
-        # Clean build cache to force re-installing updated requirements
-        buildozer android clean
+        # Clean local build cache to force re-installing updated requirements
+        rm -rf .buildozer
         # Accept licenses automatically
         yes | buildozer android debug
       env:
