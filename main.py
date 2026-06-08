@@ -17,17 +17,26 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import logging
 import threading
-from modules.sync_ui import SyncProgressPopup, RetryConfirmPopup, SyncWorker, AppUpdatePopup
+
+try:
+    from modules.sync_ui import SyncProgressPopup, RetryConfirmPopup, SyncWorker, AppUpdatePopup
+    # 導入各模組
+    from modules.powerlotto import PowerLottoQueryScreen, PowerLottoResultScreen, PowerLottoSavedScreen, PowerLottoDuplicateScreen, PowerLottoDuplicateDetailScreen, PowerLottoWinningDetailsScreen
+    from modules.biglotto import BigLottoQueryScreen, BigLottoResultsScreen, BigLottoSavedScreen, BigLottoRepeatedNumbersScreen, BigLottoDuplicateDetailScreen, BigLottoWinningDetailsScreen
+    from modules.lotto539 import Lotto539QueryScreen, Lotto539ResultScreen, Lotto539SavedScreen, Lotto539WinningDetailsScreen, Lotto539DuplicateScreen, Lotto539DuplicateDetailScreen
+    from modules.lotto3star import Lotto3StarQueryScreen, Lotto3StarResultsScreen, Lotto3StarSavedScreen, Lotto3StarRepeatedNumbersScreen, Lotto3StarDuplicateDetailScreen, Lotto3StarWinningDetailsScreen
+    from modules.lotto4star import Lotto4StarQueryScreen, Lotto4StarResultsScreen, Lotto4StarSavedScreen, Lotto4StarRepeatedNumbersScreen, Lotto4StarDuplicateDetailScreen, Lotto4StarWinningDetailsScreen
+    from modules.common import LotteryTypeScreen  # 新增這行
+except Exception as e:
+    import traceback
+    import sys
+    print("CRITICAL IMPORT ERROR DURING STARTUP:")
+    traceback.print_exc(file=sys.stdout)
+    sys.stdout.flush()
+    sys.stderr.flush()
+    raise e
 
 DEBUG = True  # 全域 DEBUG 變數，控制日誌輸出 True測試 False發佈
-
-# 導入各模組
-from modules.powerlotto import PowerLottoQueryScreen, PowerLottoResultScreen, PowerLottoSavedScreen, PowerLottoDuplicateScreen, PowerLottoDuplicateDetailScreen, PowerLottoWinningDetailsScreen
-from modules.biglotto import BigLottoQueryScreen, BigLottoResultsScreen, BigLottoSavedScreen, BigLottoRepeatedNumbersScreen, BigLottoDuplicateDetailScreen, BigLottoWinningDetailsScreen
-from modules.lotto539 import Lotto539QueryScreen, Lotto539ResultScreen, Lotto539SavedScreen, Lotto539WinningDetailsScreen, Lotto539DuplicateScreen, Lotto539DuplicateDetailScreen
-from modules.lotto3star import Lotto3StarQueryScreen, Lotto3StarResultsScreen, Lotto3StarSavedScreen, Lotto3StarRepeatedNumbersScreen, Lotto3StarDuplicateDetailScreen, Lotto3StarWinningDetailsScreen
-from modules.lotto4star import Lotto4StarQueryScreen, Lotto4StarResultsScreen, Lotto4StarSavedScreen, Lotto4StarRepeatedNumbersScreen, Lotto4StarDuplicateDetailScreen, Lotto4StarWinningDetailsScreen
-from modules.common import LotteryTypeScreen  # 新增這行
 
 # 通用設定（適用所有平台）
 Config.set('input', 'mouse', 'mouse,disable_multitouch')  # 關閉觸摸標記
