@@ -187,7 +187,9 @@ class LotteryApp(App):
 
     def _init_environment(self):
         """初始化運行環境"""
-        Window.size = (360, 640)
+        from kivy.utils import platform
+        if platform not in ('android', 'ios'):
+            Window.size = (360, 640)
         Window.clearcolor = get_color_from_hex('#121212')
         
         # 創建必要目錄
@@ -244,12 +246,12 @@ class LotteryApp(App):
         """檢查圖片資源完整性"""
         missing = []
         required_images = [
-            '好運自己選.png',
-            '威力彩.png', '威力彩_pressed.png',
-            '大樂透.png', '大樂透_pressed.png',
-            '今彩539.png', '今彩539_pressed.png',
-            '3星彩.png', '3星彩_pressed.png',
-            '4星彩.png', '4星彩_pressed.png'
+            'logo.png',
+            'power.png', 'power_pressed.png',
+            'big.png', 'big_pressed.png',
+            'lotto539.png', 'lotto539_pressed.png',
+            'lotto3star.png', 'lotto3star_pressed.png',
+            'lotto4star.png', 'lotto4star_pressed.png'
         ]
         
         for img in required_images:
@@ -370,9 +372,17 @@ class LotteryApp(App):
     def _preload_resources(self, dt):
         """後台預加載資源"""
         from kivy.core.image import Image as CoreImage
-        for name in self.LOTTERY_TYPES:
+        # Mapping to English filenames
+        img_mapping = {
+            'power': 'power',
+            'big': 'big',
+            '539': 'lotto539',
+            '3star': 'lotto3star',
+            '4star': 'lotto4star'
+        }
+        for name in img_mapping:
             try:
-                img_path = self.resource_path(f"images/{self.LOTTERY_TYPES[name]}.png")
+                img_path = self.resource_path(f"images/{img_mapping[name]}.png")
                 CoreImage(img_path, mipmap=True)
             except Exception as e:
                 logging.error(f"預加載圖片失敗: {str(e)}")

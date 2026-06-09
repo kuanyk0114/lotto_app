@@ -13,7 +13,7 @@ package.domain = com.lottotaiwan
 source.dir = .
 
 # (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,ttf,json
+source.include_exts = py,png,jpg,kv,ttf,json,db
 
 # (list) List of exclusions using pattern matching
 #source.exclude_patterns = license,images/*_original.png
