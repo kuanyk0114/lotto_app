@@ -295,6 +295,7 @@ class BallButton(ButtonBehavior, Label):
         self.bold = True
         self.halign = 'center'
         self.valign = 'middle'
+        self._last_touch_time = 0.0  # 用於過濾 Android 重複觸控事件的冷卻時間
         self.bind(pos=self.update_canvas, size=self.update_canvas, selected=self.update_canvas)
         self.update_canvas()
 
@@ -334,6 +335,12 @@ class BallButton(ButtonBehavior, Label):
         collide = self.collide_point(*touch.pos)
         logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_touch_down: pos={touch.pos}, collide={collide}")
         if collide:
+            import time
+            current_time = time.time()
+            if current_time - self._last_touch_time < 0.1:
+                logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_touch_down ignored (cooldown: {current_time - self._last_touch_time:.4f}s)")
+                return False
+            self._last_touch_time = current_time
             touch.grab(self)
             return True
         return False
