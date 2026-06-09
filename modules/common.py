@@ -281,8 +281,7 @@ class ResultBall(BoxLayout):
             )
             self.add_widget(label)
 
-class BallButton(ButtonBehavior, Widget):
-    text = StringProperty('')
+class BallButton(ButtonBehavior, Label):
     selected = BooleanProperty(False)
     area = NumericProperty(1)
     lotto_type = StringProperty('powerlotto') # 'powerlotto', 'biglotto', 'lotto539', 'lotto3star', 'lotto4star'
@@ -290,22 +289,23 @@ class BallButton(ButtonBehavior, Widget):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.label = Label(text=self.text, font_name='ChineseFont', font_size=dp(16), color=(0,0,0,1), bold=True)
-        self.add_widget(self.label)
-        self.bind(pos=self.update_canvas, size=self.update_canvas, text=self.update_label, selected=self.update_canvas)
+        self.font_name = 'ChineseFont'
+        self.font_size = dp(16)
+        self.color = (0, 0, 0, 1)  # 黑色字體
+        self.bold = True
+        self.halign = 'center'
+        self.valign = 'middle'
+        self.bind(pos=self.update_canvas, size=self.update_canvas, selected=self.update_canvas)
         self.update_canvas()
+
+    def set_text(self, text):
+        """安全地設置球組件的文字，與舊代碼相容"""
+        self.text = text
 
     def on_press(self):
         self.selected = not self.selected
 
-    def update_label(self, instance, value):
-        self.label.text = value
-        self.label.pos = self.pos
-        self.label.size = self.size
-
     def update_canvas(self, *args):
-        self.label.pos = self.pos
-        self.label.size = self.size
         self.canvas.before.clear()
         with self.canvas.before:
             # 根據不同彩種設定顏色
