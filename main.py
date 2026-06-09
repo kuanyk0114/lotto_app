@@ -1,35 +1,66 @@
-from kivy.app import App
-from kivy.uix.screenmanager import Screen, ScreenManager
-from kivy.factory import Factory
-from kivy.lang import Builder
-from kivy.core.window import Window
-from kivy.core.text import LabelBase
-from kivy.clock import Clock
-from kivy.utils import get_color_from_hex
-from kivy.config import Config
-from kivy.properties import DictProperty
-import os
-import traceback
-import csv
-import sqlite3
-import importlib.util
 import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-import logging
-import threading
+import traceback
 
 try:
+    print("[BOOTSTRAP] 1. Importing Kivy core modules")
+    sys.stdout.flush()
+    from kivy.app import App
+    from kivy.uix.screenmanager import Screen, ScreenManager
+    from kivy.factory import Factory
+    from kivy.lang import Builder
+    from kivy.core.window import Window
+    from kivy.core.text import LabelBase
+    from kivy.clock import Clock
+    from kivy.utils import get_color_from_hex
+    from kivy.config import Config
+    from kivy.properties import DictProperty
+    
+    print("[BOOTSTRAP] 2. Importing standard libraries")
+    sys.stdout.flush()
+    import os
+    import csv
+    import sqlite3
+    import importlib.util
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    import logging
+    import threading
+
+    print("[BOOTSTRAP] 3. Importing ssl library")
+    sys.stdout.flush()
+    import ssl
+
+    print("[BOOTSTRAP] 4. Importing requests library")
+    sys.stdout.flush()
+    import requests
+
+    print("[BOOTSTRAP] 5. Importing sync_ui module")
+    sys.stdout.flush()
     from modules.sync_ui import SyncProgressPopup, RetryConfirmPopup, SyncWorker, AppUpdatePopup
-    # 導入各模組
+    
+    print("[BOOTSTRAP] 6. Importing PowerLotto screens")
+    sys.stdout.flush()
     from modules.powerlotto import PowerLottoQueryScreen, PowerLottoResultScreen, PowerLottoSavedScreen, PowerLottoDuplicateScreen, PowerLottoDuplicateDetailScreen, PowerLottoWinningDetailsScreen
+    
+    print("[BOOTSTRAP] 7. Importing BigLotto screens")
+    sys.stdout.flush()
     from modules.biglotto import BigLottoQueryScreen, BigLottoResultsScreen, BigLottoSavedScreen, BigLottoRepeatedNumbersScreen, BigLottoDuplicateDetailScreen, BigLottoWinningDetailsScreen
+    
+    print("[BOOTSTRAP] 8. Importing Lotto539 screens")
+    sys.stdout.flush()
     from modules.lotto539 import Lotto539QueryScreen, Lotto539ResultScreen, Lotto539SavedScreen, Lotto539WinningDetailsScreen, Lotto539DuplicateScreen, Lotto539DuplicateDetailScreen
+    
+    print("[BOOTSTRAP] 9. Importing Lotto3Star & Lotto4Star screens")
+    sys.stdout.flush()
     from modules.lotto3star import Lotto3StarQueryScreen, Lotto3StarResultsScreen, Lotto3StarSavedScreen, Lotto3StarRepeatedNumbersScreen, Lotto3StarDuplicateDetailScreen, Lotto3StarWinningDetailsScreen
     from modules.lotto4star import Lotto4StarQueryScreen, Lotto4StarResultsScreen, Lotto4StarSavedScreen, Lotto4StarRepeatedNumbersScreen, Lotto4StarDuplicateDetailScreen, Lotto4StarWinningDetailsScreen
+    
+    print("[BOOTSTRAP] 10. Importing common modules")
+    sys.stdout.flush()
     from modules.common import LotteryTypeScreen  # 新增這行
-except Exception as e:
-    import traceback
-    import sys
+
+    print("[BOOTSTRAP] All imports completed successfully!")
+    sys.stdout.flush()
+except BaseException as e:
     print("CRITICAL IMPORT ERROR DURING STARTUP:")
     traceback.print_exc(file=sys.stdout)
     sys.stdout.flush()
@@ -415,5 +446,14 @@ class LotteryApp(App):
             logging.error(f"Error reloading history data: {e}")
 
 if __name__ == '__main__':
-    setup_logging()
-    LotteryApp().run()
+    try:
+        setup_logging()
+        LotteryApp().run()
+    except BaseException as e:
+        import traceback
+        import sys
+        print("CRITICAL RUNTIME ERROR:")
+        traceback.print_exc(file=sys.stdout)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        raise e
