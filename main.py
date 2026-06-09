@@ -75,6 +75,12 @@ Config.set('graphics', 'show_cursor', '1')               # 顯示系統默認鼠
 
 def setup_logging():
     """設定全域日誌記錄器"""
+    from kivy.utils import platform
+    if platform == 'android':
+        print("[BOOTSTRAP] Android platform detected, skipping custom root logging setup.")
+        sys.stdout.flush()
+        return
+        
     log_level = logging.DEBUG if DEBUG else logging.INFO
     log_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
