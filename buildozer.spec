@@ -33,6 +33,9 @@ version = 1.0
 # Valid values are: landscape, portrait, portrait-reverse, landscape-reverse
 orientation = portrait
 
+# (int) Fullscreen mode, 0 or 1
+fullscreen = 1
+
 # (list) List of service to declare
 #services = NAME:ENTRYPOINT_TO_PY,DEBUG_PORT
 

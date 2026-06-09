@@ -302,9 +302,40 @@ class BallButton(ButtonBehavior, Label):
         """安全地設置球組件的文字，與舊代碼相容"""
         self.text = text
 
+    def collide_point(self, x, y):
+        # 1. 標準碰撞檢測（適用於電腦桌面端及正常 Android 裝置）
+        if self.x <= x <= self.right and self.y <= y <= self.top:
+            return True
+            
+        # 2. 針對部分高解析度 Android 裝置的座標系統不一致（觸控座標為 dp，但元件座標為像素）進行匹配
+        try:
+            from kivy.metrics import Metrics
+            from kivy.core.window import Window
+            
+            density = Metrics.density
+            if density and density != 1.0:
+                # 測試縮放後的座標
+                sx = x * density
+                sy = y * density
+                if self.x <= sx <= self.right and self.y <= sy <= self.top:
+                    return True
+                    
+                # 測試縮放且 Y 軸翻轉後的座標（Android 螢幕頂部為原點 vs Kivy 螢幕底部為原點）
+                sy_inv = Window.height - (y * density)
+                if self.x <= sx <= self.right and self.y <= sy_inv <= self.top:
+                    return True
+        except Exception as e:
+            logger.error(f"BallButton collide_point 錯誤: {e}")
+            
+        return False
+
+
     def on_touch_down(self, touch):
         collide = self.collide_point(*touch.pos)
+        from kivy.core.window import Window
+        from kivy.metrics import Metrics
         logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_touch_down: pos={touch.pos}, widget_pos={self.pos}, size={self.size}, collide={collide}")
+        logger.debug(f"[BallTouch] Window.size={Window.size}, Metrics.density={Metrics.density}, Metrics.dpi={Metrics.dpi}")
         ret = super().on_touch_down(touch)
         logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_touch_down ret={ret}")
         return ret
