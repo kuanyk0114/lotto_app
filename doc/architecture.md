@@ -27,17 +27,17 @@ Local專案根目錄/
 │    ├── lotto3star.kv    		#三星彩介面
 │    └── lotto4star.kv     		#四星彩介面
 ├── images/
-│    ├── 好運自己選.png		    #主標題圖片
-│    ├── 威力彩.png			    #正常狀態
-│    ├── 威力彩_pressed.png	    #按下狀態
-│    ├── 大樂透.png			    #正常狀態
-│    ├── 大樂透_pressed.png	    #按下狀態
-│    ├── 今彩539.png		        #正常狀態
-│    ├── 今彩539_pressed.png  	#按下狀態
-│    ├── 3星彩.png			    #正常狀態
-│    ├── 3星彩_pressed.png		#按下狀態
-│    ├── 4星彩.png			    #正常狀態
-│    └── 4星彩_pressed.png		#按下狀態
+│    ├── logo.png               #主標題圖片
+│    ├── power.png              #正常狀態
+│    ├── power_pressed.png      #按下狀態
+│    ├── big.png                #正常狀態
+│    ├── big_pressed.png        #按下狀態
+│    ├── lotto539.png           #正常狀態
+│    ├── lotto539_pressed.png   #按下狀態
+│    ├── lotto3star.png         #正常狀態
+│    ├── lotto3star_pressed.png #按下狀態
+│    ├── lotto4star.png         #正常狀態
+│    └── lotto4star_pressed.png #按下狀態
 ├── doc/                        #系統文件資料夾
 │    ├── context.md             #專案背景知識
 │    └── architecture.md        #專案檔案架構及資料庫說明
