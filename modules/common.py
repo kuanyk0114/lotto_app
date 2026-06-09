@@ -332,32 +332,27 @@ class BallButton(ButtonBehavior, Label):
 
     def on_touch_down(self, touch):
         collide = self.collide_point(*touch.pos)
-        from kivy.core.window import Window
-        from kivy.metrics import Metrics
-        logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_touch_down: pos={touch.pos}, widget_pos={self.pos}, size={self.size}, collide={collide}")
-        logger.debug(f"[BallTouch] Window.size={Window.size}, Metrics.density={Metrics.density}, Metrics.dpi={Metrics.dpi}")
-        ret = super().on_touch_down(touch)
-        logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_touch_down ret={ret}")
-        return ret
+        logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_touch_down: pos={touch.pos}, collide={collide}")
+        if collide:
+            touch.grab(self)
+            return True
+        return False
 
     def on_touch_move(self, touch):
-        collide = self.collide_point(*touch.pos)
-        ret = super().on_touch_move(touch)
-        if collide:
-            logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_touch_move: pos={touch.pos}, collide={collide}, grab_current={touch.grab_current}, ret={ret}")
-        return ret
+        if touch.grab_current is self:
+            return True
+        return False
 
     def on_touch_up(self, touch):
-        collide = self.collide_point(*touch.pos)
-        logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_touch_up: pos={touch.pos}, collide={collide}, grab_current={touch.grab_current}")
-        ret = super().on_touch_up(touch)
-        logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_touch_up ret={ret}")
-        return ret
-
-    def on_press(self):
-        logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_press triggered! Old selected={self.selected}")
-        self.selected = not self.selected
-        logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_press finished! New selected={self.selected}")
+        if touch.grab_current is self:
+            touch.ungrab(self)
+            collide = self.collide_point(*touch.pos)
+            logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_touch_up: pos={touch.pos}, collide={collide}, grabbed=True")
+            if collide:
+                logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} CLICKED! Toggling selected from {self.selected} to {not self.selected}")
+                self.selected = not self.selected
+            return True
+        return False
 
 
     def update_canvas(self, *args):
