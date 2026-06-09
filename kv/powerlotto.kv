@@ -67,7 +67,6 @@
                 font_name: 'ChineseFont'
                 font_size: dp(16)
                 size_hint_y: None
-                height: dp(160)  # 固定高度 (5行 * 30dp) 原為 dp(160)，調整以適應更大的球
                 height: dp(25)
                 halign: 'center'
             
@@ -79,12 +78,11 @@
                 spacing: dp(5)
                 padding: dp(5)
                 size_hint_y: None
-                height: dp(160)  # 固定高度 (5行 * 30dp) 原為 dp(160)，調整以適應更大的球
+                height: dp(220)  # 增加高度以提供更大的觸控點（每行約44dp）
 
             # 添加空白間隔
             Widget:
                 size_hint_y: None
-                height: dp(160)  # 固定高度 (5行 * 30dp) 原為 dp(160)，調整以適應更大的球
                 height: dp(15)  # 增加間隔
                      
             # 第二區標題
@@ -93,7 +91,6 @@
                 font_name: 'ChineseFont'
                 font_size: dp(16)
                 size_hint_y: None
-                height: dp(160)  # 固定高度 (5行 * 30dp) 原為 dp(160)，調整以適應更大的球
                 height: dp(25)
                 halign: 'center'
             
@@ -105,9 +102,7 @@
                 spacing: dp(5)
                 padding: dp(5)
                 size_hint_y: None
-                height: dp(160)  # 固定高度 (5行 * 30dp) 原為 dp(160)，調整以適應更大的球
-                height: dp(40)  # 固定高度 原為 dp(40)，調整以適應更大的球 
-
+                height: dp(44)  # 增加高度
             
             # 添加空白區域確保按鈕不會被擠壓
             Widget:

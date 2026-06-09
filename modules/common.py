@@ -302,8 +302,32 @@ class BallButton(ButtonBehavior, Label):
         """安全地設置球組件的文字，與舊代碼相容"""
         self.text = text
 
+    def on_touch_down(self, touch):
+        collide = self.collide_point(*touch.pos)
+        logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_touch_down: pos={touch.pos}, widget_pos={self.pos}, size={self.size}, collide={collide}")
+        ret = super().on_touch_down(touch)
+        logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_touch_down ret={ret}")
+        return ret
+
+    def on_touch_move(self, touch):
+        collide = self.collide_point(*touch.pos)
+        ret = super().on_touch_move(touch)
+        if collide:
+            logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_touch_move: pos={touch.pos}, collide={collide}, grab_current={touch.grab_current}, ret={ret}")
+        return ret
+
+    def on_touch_up(self, touch):
+        collide = self.collide_point(*touch.pos)
+        logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_touch_up: pos={touch.pos}, collide={collide}, grab_current={touch.grab_current}")
+        ret = super().on_touch_up(touch)
+        logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_touch_up ret={ret}")
+        return ret
+
     def on_press(self):
+        logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_press triggered! Old selected={self.selected}")
         self.selected = not self.selected
+        logger.debug(f"[BallTouch] {self.lotto_type} BallButton {self.text} on_press finished! New selected={self.selected}")
+
 
     def update_canvas(self, *args):
         self.canvas.before.clear()
