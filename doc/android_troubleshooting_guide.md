@@ -11,6 +11,7 @@
 4. [預載資料庫未打包問題 (SQLite no such table 錯誤)](#4-預載資料庫未打包問題-sqlite-no-such-table-錯誤)
 5. [選號查詢畫面點擊彩球無反應問題 (座標系統與碰撞偵測)](#5-選號查詢畫面點擊彩球無反應問題-座標系統與碰撞偵測)
 6. [觸控事件重複分發導致選取抵消問題 (Double Touch)](#6-觸控事件重複分發導致選取抵消問題-double-touch)
+7. [重複查詢結果列表滑動誤觸進入詳情問題 (ScrollView Touch-Down Click-Through)](#7-重複查詢結果列表滑動誤觸進入詳情問題-scrollview-touch-down-click-through)
 
 ---
 
@@ -146,3 +147,39 @@ APK 啟動後，在執行歷史紀錄查詢或同步時拋出 SQLite 錯誤：`n
       return False
   ```
   這可以 100% 消除重複事件的干擾，同時保持人類最高速連續點擊的流暢性。
+
+---
+
+## 7. 重複查詢結果列表滑動誤觸進入詳情問題 (ScrollView Touch-Down Click-Through)
+
+### 📌 問題描述
+在各彩種的「重複X碼查詢結果列表」中，當用戶以手指滑動欲捲動 ScrollView 查看其他頁面時，會誤點到手指剛接觸的那筆記錄，直接進入了查看重複記錄詳情頁面，導致無法正常滑動列表。
+* **原因**：原本的列表項目使用的是普通 `BoxLayout` 容器，並直接將點擊詳情邏輯綁定到其 `on_touch_down` 事件。在 Kivy 事件傳遞中，滑動操作的起始按壓會立刻觸發該項目的 `on_touch_down` 並切換螢幕，導致 `ScrollView` 無法攔截該觸控手勢。
+
+### 💡 解決方案
+* **步驟 A：實作 ClickableBoxLayout 混合類別**
+  在 `modules/common.py` 中，定義一個繼承自 `ButtonBehavior` 與 `BoxLayout` 的類別，使佈局具備按鈕的觸控 Grabbing / Scrolling 攔截能力：
+  ```python
+  from kivy.uix.behaviors import ButtonBehavior
+  from kivy.uix.boxlayout import BoxLayout
+
+  class ClickableBoxLayout(ButtonBehavior, BoxLayout):
+      pass
+  ```
+* **步驟 B：改用 `on_release` 響應點擊**
+  將各彩種結果列表中（例如 `biglotto.py`、`lotto3star.py` 等的 `_create_duplicate_item`）的容器 `BoxLayout` 替換為 `ClickableBoxLayout`，並將事件綁定從 `on_touch_down` 改為 `on_release`：
+  ```python
+  # 原程式碼：
+  # box = BoxLayout(...)
+  # box.bind(on_touch_down=lambda instance, touch: self._handle_duplicate_item_click(instance, touch, item))
+  
+  # 修改後：
+  box = ClickableBoxLayout(...)
+  box.bind(on_release=lambda instance: self._handle_duplicate_item_click(instance, item))
+  ```
+* **步驟 C：簡化回呼函式**
+  移除回呼中不再需要的 `touch` 參數和 `collide_point` 檢測，裝載由 `ButtonBehavior` 自動處理的觸控釋放判定（當被 ScrollView 搶奪觸控後，觸控被 `ungrab`，因此不會觸發項目點擊）：
+  ```python
+  def _handle_duplicate_item_click(self, instance, item):
+      self.show_duplicate_details(item['numbers'])
+  ```
