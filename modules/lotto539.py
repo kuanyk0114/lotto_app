@@ -889,54 +889,7 @@ class Lotto539ResultScreen(BaseAdvancedResultScreen):
             self.ids.sort_btn.text = f'排序: {"升序" if self.sort_order == "ASC" else "降序"}'
         logger.debug("今彩539確保排序按鈕可用")
 
-    def _reset_scroll_to_top(self):
-        """重置滾動位置到頂部"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                # 先停止任何正在進行的滾動
-                self._stop_scrolling()
-                # 使用多次延遲確保UI完全更新後執行
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.2)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.4)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.6)
-                logger.debug("今彩539滾動位置已重置到頂部")
-        except Exception as e:
-            logger.exception(f"今彩539重置滾動位置錯誤: {str(e)}")
 
-    def _stop_scrolling(self):
-        """停止當前的滾動動作"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 取消任何正在進行的動畫
-                Animation.cancel_all(scroll_view)
-                # 停止滾動效果
-                if hasattr(scroll_view, 'scroll_timeout'):
-                    Clock.unschedule(scroll_view.scroll_timeout)
-                # 立即設定位置
-                scroll_view.scroll_y = 1
-                logger.debug("今彩539停止滾動動作並立即重置")
-        except Exception as e:
-            logger.exception(f"今彩539停止滾動錯誤: {str(e)}")
-
-    def _force_scroll_to_top(self):
-        """強制滾動到頂部"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 停止任何動畫
-                Animation.cancel_all(scroll_view)
-                
-                # 使用Animation強制滾動到頂部
-                anim = Animation(scroll_y=1, duration=0.1)
-                anim.start(scroll_view)
-                
-                # 同時直接設定位置
-                scroll_view.scroll_y = 1
-                
-                logger.debug(f"今彩539強制滾動位置: {scroll_view.scroll_y}")
-        except Exception as e:
-            logger.exception(f"今彩539強制滾動錯誤: {str(e)}")
 
     def back_to_query(self):
         from kivy.app import App
@@ -1430,17 +1383,6 @@ class Lotto539WinningDetailsScreen(Screen, BaseScrollMixin):
     def _append_to_result_list(self, new_records):
         """追加新記錄到結果列表"""
         try:
-            # 保存當前滾動的絕對位置
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                current_content_height = self.ids.results_layout.height
-                current_viewport_height = scroll_view.height
-                current_absolute_scroll = (1 - scroll_view.scroll_y) * max(0, current_content_height - current_viewport_height)
-                
-                logger.debug(f"今彩539中獎詳情載入前 - 內容高度: {current_content_height}, 絕對滾動位置: {current_absolute_scroll}")
-            else:
-                current_absolute_scroll = 0
-            
             # 移除舊的載入指示器
             self._remove_load_more_indicator()
             
@@ -1792,20 +1734,6 @@ class Lotto539WinningDetailsScreen(Screen, BaseScrollMixin):
         
         return None, ''
 
-
-
-        
-        # 檢查是否接近底部（在到達底部前就開始載入）
-        content_height = self.ids.duplicate_list.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        # 當剩餘內容少於1.5個螢幕高度時開始載入
-        if remaining_content <= viewport_height * 1.5:
-            logger.debug(f"今彩539重複五碼慣性滾動結束後檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
-            self._load_next_page()
-
     def find_duplicates(self):
         """使用 SQLite 查詢重複五碼"""
         app = App.get_running_app()
@@ -2059,15 +1987,7 @@ class Lotto539DuplicateDetailScreen(Screen, BaseScrollMixin):
         self.has_more_data = True
         logger.debug("今彩539重複記錄詳情重置分頁狀態")
 
-    def _reset_scroll_to_top(self):
-        """重置滾動位置到頂部"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                scroll_view.scroll_y = 1  # 滾動到頂部
-                logger.debug("今彩539中獎詳情慣性滾動結束")
-        except Exception as e:
-            logger.exception(f"今彩539重複記錄詳情重置滾動位置錯誤: {str(e)}")
+
 
     def _perform_detail_query(self):
         """執行詳細記錄查詢"""

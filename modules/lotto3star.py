@@ -1074,54 +1074,7 @@ class Lotto3StarResultsScreen(BaseAdvancedResultScreen):
             logger.debug("三星彩查詢結果找不到sort_btn，無法啟用")
         logger.debug("三星彩查詢結果確保排序按鈕可用")
 
-    def _reset_scroll_to_top(self):
-        """重置滾動位置到頂部"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                # 先停止任何正在進行的滾動
-                self._stop_scrolling()
-                # 使用多次延遲確保UI完全更新後執行
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.2)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.4)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.6)
-                logger.debug("三星彩查詢結果滾動位置已重置到頂部")
-        except Exception as e:
-            logger.exception(f"三星彩查詢結果重置滾動位置錯誤: {str(e)}")
 
-    def _stop_scrolling(self):
-        """停止當前的滾動動作"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 取消任何正在進行的動畫
-                Animation.cancel_all(scroll_view)
-                # 停止滾動效果
-                if hasattr(scroll_view, 'scroll_timeout'):
-                    Clock.unschedule(scroll_view.scroll_timeout)
-                # 立即設定位置
-                scroll_view.scroll_y = 1
-                logger.debug("三星彩查詢結果停止滾動動作並立即重置")
-        except Exception as e:
-            logger.exception(f"三星彩查詢結果停止滾動錯誤: {str(e)}")
-
-    def _force_scroll_to_top(self):
-        """強制滾動到頂部"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 停止任何動畫
-                Animation.cancel_all(scroll_view)
-                
-                # 使用Animation強制滾動到頂部
-                anim = Animation(scroll_y=1, duration=0.1)
-                anim.start(scroll_view)
-                
-                # 同時直接設定位置
-                scroll_view.scroll_y = 1
-                
-                logger.debug(f"三星彩查詢結果強制滾動位置: {scroll_view.scroll_y}")
-        except Exception as e:
-            logger.exception(f"三星彩查詢結果強制滾動錯誤: {str(e)}")
 
     def _old_show_results(self, selected_numbers):
         """保留舊版本的show_results方法以保持向後相容"""
@@ -2582,7 +2535,7 @@ class Lotto3StarWinningDetailsScreen(Screen, BaseScrollMixin):
                 self._add_load_more_indicator()
                 
                 # 恢復滾動位置（延遲執行確保UI更新完成）
-                Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute_details(current_absolute_scroll), 0.1)
+                Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.1)
                 
                 logger.debug(f"三星彩中獎詳情載入第{self.current_page}頁: 顯示 {start_index+1}-{end_index} 筆")
                 
@@ -2675,78 +2628,7 @@ class Lotto3StarWinningDetailsScreen(Screen, BaseScrollMixin):
             logger.warning("三星彩中獎詳情找不到sort_btn，無法啟用")
         logger.debug("三星彩中獎詳情確保排序按鈕可用")
 
-    def _reset_scroll_to_top(self):
-        """重置滾動位置到頂部"""
-        try:
-            if hasattr(self.ids, 'results_scroll'):
-                # 先停止任何正在進行的滾動
-                self._stop_scrolling()
-                # 使用多次延遲確保UI完全更新後執行
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.2)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.4)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.6)
-                logger.debug("三星彩中獎詳情滾動位置已重置到頂部")
-        except Exception as e:
-            logger.exception(f"三星彩中獎詳情重置滾動位置錯誤: {str(e)}")
 
-    def _stop_scrolling(self):
-        """停止當前的滾動動作"""
-        try:
-            if hasattr(self.ids, 'results_scroll'):
-                scroll_view = self.ids.results_scroll
-                # 取消任何正在進行的動畫
-                Animation.cancel_all(scroll_view)
-                # 停止滾動效果
-                if hasattr(scroll_view, 'scroll_timeout'):
-                    Clock.unschedule(scroll_view.scroll_timeout)
-                # 立即設定位置
-                scroll_view.scroll_y = 1
-                logger.debug("三星彩中獎詳情停止滾動動作並立即重置")
-        except Exception as e:
-            logger.exception(f"三星彩中獎詳情停止滾動錯誤: {str(e)}")
-
-    def _force_scroll_to_top(self):
-        """強制滾動到頂部"""
-        try:
-            if hasattr(self.ids, 'results_scroll'):
-                scroll_view = self.ids.results_scroll
-                # 停止任何動畫
-                Animation.cancel_all(scroll_view)
-                
-                # 使用Animation強制滾動到頂部
-                anim = Animation(scroll_y=1, duration=0.1)
-                anim.start(scroll_view)
-                
-                # 同時直接設定位置
-                scroll_view.scroll_y = 1
-                
-                logger.debug(f"三星彩中獎詳情強制滾動位置: {scroll_view.scroll_y}")
-        except Exception as e:
-            logger.exception(f"三星彩中獎詳情強制滾動錯誤: {str(e)}")
-
-    def _restore_scroll_position_absolute_details(self, target_absolute_scroll):
-        """根據絕對位置恢復滾動位置（中獎詳情頁面）"""
-        try:
-            if hasattr(self.ids, 'results_scroll'):
-                scroll_view = self.ids.results_scroll
-                new_content_height = self.ids.results_layout.height
-                viewport_height = scroll_view.height
-                
-                # 計算新的相對滾動位置
-                max_scroll = max(0, new_content_height - viewport_height)
-                if max_scroll > 0:
-                    # 保持相同的絕對位置，但稍微向上調整以保持視覺連續性
-                    adjusted_absolute_scroll = max(0, target_absolute_scroll - 50)  # 向上調整50像素
-                    new_scroll_y = 1 - (adjusted_absolute_scroll / max_scroll)
-                    new_scroll_y = max(0, min(1, new_scroll_y))  # 確保在有效範圍內
-                else:
-                    new_scroll_y = 1  # 內容不夠長，保持在頂部
-                
-                scroll_view.scroll_y = new_scroll_y
-                logger.debug(f"三星彩中獎詳情載入後滾動位置: {new_scroll_y:.3f}, 內容高度: {new_content_height:.0f}px")
-                
-        except Exception as e:
-            logger.exception(f"三星彩中獎詳情恢復滾動位置錯誤: {str(e)}")
 
     def show_results(self):
         self.ids.results_layout.clear_widgets()

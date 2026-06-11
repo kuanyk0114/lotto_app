@@ -847,57 +847,7 @@ class Lotto4StarResultsScreen(BaseAdvancedResultScreen):
         self.load_more_indicator = load_more_box
         self.load_more_label = load_more_label
 
-    def _reset_scroll_to_top(self):
-        """重置滾動位置到頂部"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 先停止任何正在進行的滾動
-                self._stop_scrolling()
-                # 使用多次延遲確保UI完全更新後執行
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.2)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.4)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.6)
-                logger.debug("四星彩查詢結果滾動位置已重置到頂部")
-            else:
-                logger.debug("四星彩查詢結果找不到scroll_view")
-        except Exception as e:
-            logger.exception(f"四星彩查詢結果重置滾動位置錯誤: {str(e)}")
 
-    def _stop_scrolling(self):
-        """停止當前的滾動動作"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 取消任何正在進行的動畫
-                Animation.cancel_all(scroll_view)
-                # 停止滾動效果
-                if hasattr(scroll_view, 'scroll_timeout'):
-                    Clock.unschedule(scroll_view.scroll_timeout)
-                # 立即設定位置
-                scroll_view.scroll_y = 1
-                logger.debug("四星彩查詢結果停止滾動動作並立即重置")
-        except Exception as e:
-            logger.exception(f"四星彩查詢結果停止滾動錯誤: {str(e)}")
-
-    def _force_scroll_to_top(self):
-        """強制滾動到頂部"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 停止任何動畫
-                Animation.cancel_all(scroll_view)
-                
-                # 使用Animation強制滾動到頂部
-                anim = Animation(scroll_y=1, duration=0.1)
-                anim.start(scroll_view)
-                
-                # 同時直接設定位置
-                scroll_view.scroll_y = 1
-                
-                logger.debug(f"四星彩查詢結果強制滾動位置: {scroll_view.scroll_y}")
-        except Exception as e:
-            logger.exception(f"四星彩查詢結果強制滾動錯誤: {str(e)}")
 
     def _disable_scroll_events(self):
         """禁用滾動事件"""
@@ -976,31 +926,7 @@ class Lotto4StarResultsScreen(BaseAdvancedResultScreen):
             self.is_loading_more = False
             self._hide_loading_indicator()
 
-    def _restore_scroll_position_absolute(self, target_absolute_scroll):
-        """恢復到指定的絕對滾動位置"""
-        try:
-            scroll_view = self.ids.scroll_view
-            content_height = self.ids.results_layout.height
-            viewport_height = scroll_view.height
-            
-            if content_height > viewport_height:
-                # 計算新的相對滾動位置
-                max_scroll_distance = content_height - viewport_height
-                new_scroll_y = 1 - (target_absolute_scroll / max_scroll_distance)
-                
-                # 確保滾動位置在有效範圍內
-                new_scroll_y = max(0, min(1, new_scroll_y))
-                
-                scroll_view.scroll_y = new_scroll_y
-                logger.debug(f"四星彩查詢結果恢復滾動位置: 目標絕對位置={target_absolute_scroll:.0f}, 新scroll_y={new_scroll_y:.3f}")
-            else:
-                scroll_view.scroll_y = 1
-                logger.debug("四星彩查詢結果內容不足一頁，重置到頂部")
-                
-        except Exception as e:
-            logger.exception(f"四星彩查詢結果恢復滾動位置錯誤: {str(e)}")
-            # 如果恢復失敗，至少確保不會跳到頂部
-            pass
+
 
     def _show_loading_indicator(self):
         """顯示載入更多指示器"""
@@ -1724,75 +1650,7 @@ class Lotto4StarDuplicateDetailScreen(Screen, BaseScrollMixin):
         self.load_more_indicator = load_more_box
         self.load_more_label = load_more_label
 
-    def _reset_scroll_to_top(self):
-        """重置滾動位置到頂部"""
-        try:
-            # 檢查滾動視圖是否存在，可能是 detail_scroll 或其他ID
-            scroll_view = None
-            if hasattr(self.ids, 'detail_scroll'):
-                scroll_view = self.ids.detail_scroll
-            elif hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-            
-            if scroll_view:
-                # 先停止任何正在進行的滾動
-                self._stop_scrolling()
-                # 使用多次延遲確保UI完全更新後執行
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.2)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.4)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.6)
-                logger.debug("四星彩重複記錄詳情滾動位置已重置到頂部")
-            else:
-                logger.debug("四星彩重複記錄詳情找不到滾動視圖")
-        except Exception as e:
-            logger.exception(f"四星彩重複記錄詳情重置滾動位置錯誤: {str(e)}")
 
-    def _stop_scrolling(self):
-        """停止當前的滾動動作"""
-        try:
-            # 檢查滾動視圖是否存在
-            scroll_view = None
-            if hasattr(self.ids, 'detail_scroll'):
-                scroll_view = self.ids.detail_scroll
-            elif hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-            
-            if scroll_view:
-                # 取消任何正在進行的動畫
-                Animation.cancel_all(scroll_view)
-                # 停止滾動效果
-                if hasattr(scroll_view, 'scroll_timeout'):
-                    Clock.unschedule(scroll_view.scroll_timeout)
-                # 立即設定位置
-                scroll_view.scroll_y = 1
-                logger.debug("四星彩重複記錄詳情停止滾動動作並立即重置")
-        except Exception as e:
-            logger.exception(f"四星彩重複記錄詳情停止滾動錯誤: {str(e)}")
-
-    def _force_scroll_to_top(self):
-        """強制滾動到頂部"""
-        try:
-            # 檢查滾動視圖是否存在
-            scroll_view = None
-            if hasattr(self.ids, 'detail_scroll'):
-                scroll_view = self.ids.detail_scroll
-            elif hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-            
-            if scroll_view:
-                # 停止任何動畫
-                Animation.cancel_all(scroll_view)
-                
-                # 使用Animation強制滾動到頂部
-                anim = Animation(scroll_y=1, duration=0.1)
-                anim.start(scroll_view)
-                
-                # 同時直接設定位置
-                scroll_view.scroll_y = 1
-                
-                logger.debug(f"四星彩重複記錄詳情強制滾動位置: {scroll_view.scroll_y}")
-        except Exception as e:
-            logger.exception(f"四星彩重複記錄詳情強制滾動錯誤: {str(e)}")
 
     def _load_next_page(self):
         """載入下一頁資料"""
@@ -2314,57 +2172,7 @@ class Lotto4StarWinningDetailsScreen(Screen, BaseScrollMixin):
         self.load_more_indicator = load_more_box
         self.load_more_label = load_more_label
 
-    def _reset_scroll_to_top(self):
-        """重置滾動位置到頂部"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 先停止任何正在進行的滾動
-                self._stop_scrolling()
-                # 使用多次延遲確保UI完全更新後執行
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.2)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.4)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.6)
-                logger.warning("四星彩查詢結果慣性檢查超時，強制啟用排序按鈕")
-            else:
-                logger.warning("四星彩中獎詳情找不到scroll_view")
-        except Exception as e:
-            logger.exception(f"四星彩中獎詳情重置滾動位置錯誤: {str(e)}")
 
-    def _stop_scrolling(self):
-        """停止當前的滾動動作"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 取消任何正在進行的動畫
-                Animation.cancel_all(scroll_view)
-                # 停止滾動效果
-                if hasattr(scroll_view, 'scroll_timeout'):
-                    Clock.unschedule(scroll_view.scroll_timeout)
-                # 立即設定位置
-                scroll_view.scroll_y = 1
-                logger.debug("四星彩中獎詳情停止滾動動作並立即重置")
-        except Exception as e:
-            logger.exception(f"四星彩重複四碼重置滾動位置錯誤: {str(e)}")
-
-    def _force_scroll_to_top(self):
-        """強制滾動到頂部"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 停止任何動畫
-                Animation.cancel_all(scroll_view)
-                
-                # 使用Animation強制滾動到頂部
-                anim = Animation(scroll_y=1, duration=0.1)
-                anim.start(scroll_view)
-                
-                # 同時直接設定位置
-                scroll_view.scroll_y = 1
-                
-                logger.debug(f"四星彩中獎詳情強制滾動位置: {scroll_view.scroll_y}")
-        except Exception as e:
-            logger.exception(f"四星彩重複四碼更新列表錯誤: {str(e)}")
 
     def _disable_scroll_events(self):
         """禁用滾動事件"""
@@ -2432,23 +2240,7 @@ class Lotto4StarWinningDetailsScreen(Screen, BaseScrollMixin):
             self.is_loading_more = False
             self._hide_loading_indicator()
 
-    def _restore_scroll_position_absolute(self, target_absolute_scroll):
-        """恢復到指定的絕對滾動位置"""
-        try:
-            scroll_view = self.ids.scroll_view
-            content_height = self.ids.results_layout.height
-            viewport_height = scroll_view.height
-            
-            if content_height > viewport_height:
-                max_scroll_distance = content_height - viewport_height
-                new_scroll_y = 1 - (target_absolute_scroll / max_scroll_distance)
-                new_scroll_y = max(0, min(1, new_scroll_y))
-                scroll_view.scroll_y = new_scroll_y
-            else:
-                scroll_view.scroll_y = 1
-                
-        except Exception as e:
-            logger.exception(f"四星彩中獎詳情恢復滾動位置錯誤: {str(e)}")
+
 
     def _show_loading_indicator(self):
         """顯示載入更多指示器"""

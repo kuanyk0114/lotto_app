@@ -1350,6 +1350,13 @@ class BaseScrollMixin:
     is_scrolling = BooleanProperty(False)
     _scroll_events_disabled = BooleanProperty(False)
 
+    def _get_scroll_view(self):
+        """獲取當前屏幕的 ScrollView 實例"""
+        for scroll_id in ['scroll_view', 'results_scroll', 'detail_scroll']:
+            if hasattr(self.ids, scroll_id):
+                return getattr(self.ids, scroll_id)
+        return None
+
     def on_leave(self):
         """離開屏幕時的清理，釋放背景定時器"""
         if hasattr(self, '_inertia_timer') and self._inertia_timer:
@@ -1382,8 +1389,6 @@ class BaseScrollMixin:
     
     def on_scroll_move(self, scroll_view, touch):
         """滾動移動時檢查是否為真正的滑動"""
-        logger.debug(f"{self.__class__.__name__} on_scroll_move 被調用")
-        
         # 檢查是否禁用滾動事件
         if self._scroll_events_disabled:
             return
@@ -1398,9 +1403,10 @@ class BaseScrollMixin:
             dy = abs(touch.pos[1] - self._touch_start_pos[1])
             distance = (dx * dx + dy * dy) ** 0.5
             
-            # 提高閾值並避免重複設定
+            # 提高閾值並立即設定滾動狀態，避免重複排程與重複呼叫
             if distance > 30 and not self.is_scrolling:  # 提高到30像素
-                Clock.schedule_once(lambda dt: self._set_scrolling_state(True), 0.1)
+                self.is_scrolling = True
+                self._set_scrolling_state(True)
                 logger.debug(f"{self.__class__.__name__} 檢測到滑動，移動距離: {distance:.1f}px")
     
     def on_scroll_end(self, scroll_view, touch):
@@ -1451,11 +1457,11 @@ class BaseScrollMixin:
     
     def _check_inertia_scroll(self, dt):
         """檢查慣性滾動是否結束"""
-        if not hasattr(self.ids, 'scroll_view'):
+        scroll_view = self._get_scroll_view()
+        if not scroll_view:
             self._inertia_timer = None
             return False
         
-        scroll_view = self.ids.scroll_view
         current_scroll_y = scroll_view.scroll_y
         
         # 計算滾動位置變化
@@ -1507,9 +1513,10 @@ class BaseScrollMixin:
             current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
             remaining_content = content_height - current_scroll_pos - viewport_height
             
-            # 當剩餘內容少於1.5個螢幕高度時開始載入
-            if remaining_content <= viewport_height * 1.5:
-                logger.debug(f"{self.__class__.__name__} 立即檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
+            # 使用 dp(300) 作為載入閾值，防止高解析度螢幕上因 layout 與 Viewport 比例過於激進自動載入而造成卡頓
+            load_threshold = dp(300)
+            if remaining_content <= load_threshold:
+                logger.debug(f"{self.__class__.__name__} 立即檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px, 閾值: {load_threshold:.0f}px)")
                 if hasattr(self, '_load_next_page'):
                     self._load_next_page()
     
@@ -1526,9 +1533,10 @@ class BaseScrollMixin:
             current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
             remaining_content = content_height - current_scroll_pos - viewport_height
             
-            # 當剩餘內容少於1.5個螢幕高度時開始載入
-            if remaining_content <= viewport_height * 1.5:
-                logger.debug(f"{self.__class__.__name__} 慣性滾動結束後檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
+            # 使用 dp(300) 作為載入閾值，防止高解析度螢幕上因 layout 與 Viewport 比例過於激進自動載入而造成卡頓
+            load_threshold = dp(300)
+            if remaining_content <= load_threshold:
+                logger.debug(f"{self.__class__.__name__} 慣性滾動結束後檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px, 閾值: {load_threshold:.0f}px)")
                 if hasattr(self, '_load_next_page'):
                     self._load_next_page()
     
@@ -1552,8 +1560,8 @@ class BaseScrollMixin:
     def _restore_scroll_position_absolute(self, target_absolute_scroll):
         """恢復到指定的絕對滾動位置"""
         try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
+            scroll_view = self._get_scroll_view()
+            if scroll_view:
                 content_layout = getattr(self.ids, 'results_layout', None) or getattr(self.ids, 'duplicate_list', None) or getattr(self.ids, 'detail_list', None)
                 if content_layout:
                     content_height = content_layout.height
@@ -1571,46 +1579,35 @@ class BaseScrollMixin:
     def _reset_scroll_to_top(self):
         """重置滾動位置到頂部"""
         try:
-            if hasattr(self.ids, 'scroll_view'):
-                # 先停止任何正在進行的滾動
-                self._stop_scrolling()
-                # 使用多次延遲確保UI完全更新後執行
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.2)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.4)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.6)
-                logger.debug(f"{self.__class__.__name__} 滾動位置已重置到頂部")
+            scroll_view = self._get_scroll_view()
+            if scroll_view:
+                # 停止所有正在進行的動畫與滾動
+                Animation.cancel_all(scroll_view)
+                # 直接設定位置，避免多重延遲或動畫造成的滾動鎖定與 CPU 卡頓
+                scroll_view.scroll_y = 1
+                logger.debug(f"{self.__class__.__name__} 滾動位置已重置到頂部 (直接設定)")
         except Exception as e:
             logger.exception(f"{self.__class__.__name__} 重置滾動位置錯誤: {str(e)}")
 
     def _stop_scrolling(self):
         """停止當前的滾動動作"""
         try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 取消任何正在進行的動畫
+            scroll_view = self._get_scroll_view()
+            if scroll_view:
                 Animation.cancel_all(scroll_view)
-                # 立即設定位置
                 scroll_view.scroll_y = 1
-                logger.debug(f"{self.__class__.__name__} 停止滾動動作並立即重置")
+                logger.debug(f"{self.__class__.__name__} 停止滾動動作並立即重置 (直接設定)")
         except Exception as e:
             logger.exception(f"{self.__class__.__name__} 停止滾動錯誤: {str(e)}")
 
     def _force_scroll_to_top(self):
         """強制滾動到頂部"""
         try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 停止任何動畫
+            scroll_view = self._get_scroll_view()
+            if scroll_view:
                 Animation.cancel_all(scroll_view)
-                
-                # 使用Animation強制滾動到頂部
-                anim = Animation(scroll_y=1, duration=0.1)
-                anim.start(scroll_view)
-                
-                # 同時直接設定位置
                 scroll_view.scroll_y = 1
-                
-                logger.debug(f"{self.__class__.__name__} 強制滾動位置: {scroll_view.scroll_y}")
+                logger.debug(f"{self.__class__.__name__} 強制滾動位置: {scroll_view.scroll_y} (直接設定)")
         except Exception as e:
             logger.exception(f"{self.__class__.__name__} 強制滾動錯誤: {str(e)}")
 

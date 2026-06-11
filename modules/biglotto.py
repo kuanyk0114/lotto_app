@@ -1839,54 +1839,7 @@ class BigLottoWinningDetailsScreen(BaseAdvancedResultScreen):
             self.ids.sort_btn.text = f'排序: {"升序" if self.sort_order == "ASC" else "降序"}'
         logger.debug("大樂透確保排序按鈕可用")
 
-    def _reset_scroll_to_top(self):
-        """重置滾動位置到頂部"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                # 先停止任何正在進行的滾動
-                self._stop_scrolling()
-                # 使用多次延遲確保UI完全更新後執行
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.2)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.4)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.6)
-                logger.debug("大樂透滾動位置已重置到頂部")
-        except Exception as e:
-            logger.exception(f"大樂透重置滾動位置錯誤: {str(e)}")
 
-    def _stop_scrolling(self):
-        """停止當前的滾動動作"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 取消任何正在進行的動畫
-                Animation.cancel_all(scroll_view)
-                # 停止滾動效果
-                if hasattr(scroll_view, 'scroll_timeout'):
-                    Clock.unschedule(scroll_view.scroll_timeout)
-                # 立即設定位置
-                scroll_view.scroll_y = 1
-                logger.debug("大樂透停止滾動動作並立即重置")
-        except Exception as e:
-            logger.exception(f"大樂透停止滾動錯誤: {str(e)}")
-
-    def _force_scroll_to_top(self):
-        """強制滾動到頂部"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 停止任何動畫
-                Animation.cancel_all(scroll_view)
-                
-                # 使用Animation強制滾動到頂部
-                anim = Animation(scroll_y=1, duration=0.1)
-                anim.start(scroll_view)
-                
-                # 同時直接設定位置
-                scroll_view.scroll_y = 1
-                
-                logger.debug(f"大樂透強制滾動位置: {scroll_view.scroll_y}")
-        except Exception as e:
-            logger.exception(f"大樂透強制滾動錯誤: {str(e)}")
 
     def show_results(self):
         """保留舊版本的show_results方法以保持向後相容"""
