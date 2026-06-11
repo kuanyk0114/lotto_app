@@ -1,6 +1,10 @@
 #:import Animation kivy.animation.Animation
 #:import get_color_from_hex kivy.utils.get_color_from_hex
 
+<ScrollView>:
+    scroll_timeout: 250
+    scroll_distance: dp(10)
+
 # 共用樣式定義
 <CommonTitleLabel@Label>:
     font_name: 'ChineseFont'
