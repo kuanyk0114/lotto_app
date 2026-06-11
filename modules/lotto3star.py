@@ -1125,6 +1125,7 @@ class Lotto3StarResultsScreen(BaseAdvancedResultScreen):
 
     def on_scroll_start(self, scroll_view, touch):
         """滾動開始時的處理"""
+        Clock.unschedule(self._check_inertia_scroll)
         logger.debug(f"三星彩查詢結果滾動開始事件觸發！scroll_y={scroll_view.scroll_y:.3f}")
         
         # 檢查是否禁用滾動事件
@@ -1209,6 +1210,7 @@ class Lotto3StarResultsScreen(BaseAdvancedResultScreen):
 
     def _start_inertia_monitoring(self, scroll_view):
         """開始監控慣性滾動"""
+        Clock.unschedule(self._check_inertia_scroll)
         # 記錄當前滾動位置
         self._last_scroll_y = scroll_view.scroll_y
         self._inertia_check_count = 0
@@ -2084,6 +2086,7 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
 
     def on_scroll_start(self, scroll_view, touch):
         """滾動開始時的處理"""
+        Clock.unschedule(self._check_inertia_scroll)
         logger.debug(f"三星彩重複記錄詳情開始監控慣性滾動")
         
         # 檢查是否禁用滾動事件
@@ -2161,6 +2164,7 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
 
     def _start_inertia_monitoring(self, scroll_view):
         """開始監控慣性滾動"""
+        Clock.unschedule(self._check_inertia_scroll)
         # 記錄當前滾動位置
         self._last_scroll_y = scroll_view.scroll_y
         self._inertia_check_count = 0
@@ -2717,6 +2721,7 @@ class Lotto3StarDuplicateDetailScreen(Screen):
 
     def on_scroll_start(self, scroll_view, touch):
         """滾動開始時的處理"""
+        Clock.unschedule(self._check_inertia_scroll)
         logger.debug(f"三星彩重複三碼滾動結束事件觸發！")
         
         # 檢查是否禁用滾動事件
@@ -2794,6 +2799,7 @@ class Lotto3StarDuplicateDetailScreen(Screen):
 
     def _start_inertia_monitoring(self, scroll_view):
         """開始監控慣性滾動"""
+        Clock.unschedule(self._check_inertia_scroll)
         # 記錄當前滾動位置
         self._last_scroll_y = scroll_view.scroll_y
         self._inertia_check_count = 0
@@ -3567,6 +3573,7 @@ class Lotto3StarWinningDetailsScreen(Screen):
 
     def on_scroll_start(self, scroll_view, touch):
         """滾動開始時的處理"""
+        Clock.unschedule(self._check_inertia_scroll)
         logger.debug(f"三星彩中獎詳情滾動開始事件觸發！scroll_y={scroll_view.scroll_y:.3f}")
         
         # 檢查是否禁用滾動事件
@@ -3646,6 +3653,7 @@ class Lotto3StarWinningDetailsScreen(Screen):
 
     def _start_inertia_monitoring(self, scroll_view):
         """開始監控慣性滾動"""
+        Clock.unschedule(self._check_inertia_scroll)
         # 記錄當前滾動位置
         self._last_scroll_y = scroll_view.scroll_y
         self._inertia_check_count = 0

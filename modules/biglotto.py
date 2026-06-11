@@ -399,6 +399,7 @@ class BigLottoResultsScreen(BaseAdvancedResultScreen):
     def on_scroll_start(self, scroll_view, touch):
         """滾動開始時記錄觸摸信息"""
         logger.debug(f"大樂透 on_scroll_start 被調用")
+        Clock.unschedule(self._check_inertia_scroll)
         
         # 檢查是否禁用滾動事件
         if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
@@ -468,6 +469,7 @@ class BigLottoResultsScreen(BaseAdvancedResultScreen):
     
     def _start_inertia_monitoring(self, scroll_view):
         """開始監控慣性滾動"""
+        Clock.unschedule(self._check_inertia_scroll)
         # 記錄當前滾動位置
         self._last_scroll_y = scroll_view.scroll_y
         self._inertia_check_count = 0
@@ -551,6 +553,7 @@ class BigLottoResultsScreen(BaseAdvancedResultScreen):
     
     def _start_inertia_monitoring(self, scroll_view):
         """開始監控慣性滾動"""
+        Clock.unschedule(self._check_inertia_scroll)
         # 記錄當前滾動位置
         self._last_scroll_y = scroll_view.scroll_y
         self._inertia_check_count = 0
@@ -1376,6 +1379,7 @@ class BigLottoRepeatedNumbersScreen(BaseAdvancedResultScreen):
 
     def on_scroll_start(self, scroll_view, touch):
         """滾動開始時的處理"""
+        Clock.unschedule(self._check_inertia_scroll)
         if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
             return
         
@@ -1429,6 +1433,7 @@ class BigLottoRepeatedNumbersScreen(BaseAdvancedResultScreen):
 
     def _start_inertia_monitoring(self, scroll_view):
         """開始監控慣性滾動"""
+        Clock.unschedule(self._check_inertia_scroll)
         # 記錄當前滾動位置
         self._last_scroll_y = scroll_view.scroll_y
         self._inertia_check_count = 0
@@ -2299,6 +2304,7 @@ class BigLottoWinningDetailsScreen(BaseAdvancedResultScreen):
 
     def on_scroll_start(self, scroll_view, touch):
         """滾動開始時禁用排序按鈕"""
+        Clock.unschedule(self._check_inertia_scroll)
         # 檢查是否禁用滾動事件
         if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
             logger.debug("大樂透滾動事件被禁用，忽略滾動開始")
@@ -2363,6 +2369,7 @@ class BigLottoWinningDetailsScreen(BaseAdvancedResultScreen):
 
     def _start_inertia_monitoring(self, scroll_view):
         """開始監控慣性滾動"""
+        Clock.unschedule(self._check_inertia_scroll)
         # 記錄當前滾動位置
         self._last_scroll_y = scroll_view.scroll_y
         self._inertia_check_count = 0

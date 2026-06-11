@@ -1025,6 +1025,7 @@ class Lotto4StarResultsScreen(BaseAdvancedResultScreen):
 
     def on_scroll_start(self, scroll_view, touch):
         """滾動開始時禁用排序按鈕"""
+        Clock.unschedule(self._check_inertia_scroll)
         logger.debug(f"四星彩查詢結果滾動開始事件觸發！scroll_y={scroll_view.scroll_y:.3f}")
         
         # 檢查是否禁用滾動事件
@@ -1111,6 +1112,7 @@ class Lotto4StarResultsScreen(BaseAdvancedResultScreen):
 
     def _start_inertia_monitoring(self, scroll_view):
         """開始監控慣性滾動"""
+        Clock.unschedule(self._check_inertia_scroll)
         # 記錄當前滾動位置
         self._last_scroll_y = scroll_view.scroll_y
         self._inertia_check_count = 0
@@ -1620,6 +1622,7 @@ class Lotto4StarRepeatedNumbersScreen(Screen):
 
     def on_scroll_start(self, scroll_view, touch):
         """滾動開始時的處理"""
+        Clock.unschedule(self._check_inertia_scroll)
         if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
             return
         
@@ -1666,6 +1669,7 @@ class Lotto4StarRepeatedNumbersScreen(Screen):
 
     def _start_inertia_monitoring(self, scroll_view):
         """開始監控慣性滾動"""
+        Clock.unschedule(self._check_inertia_scroll)
         self._last_scroll_y = scroll_view.scroll_y
         self._inertia_check_count = 0
         Clock.schedule_interval(self._check_inertia_scroll, 0.1)
@@ -2165,6 +2169,7 @@ class Lotto4StarDuplicateDetailScreen(Screen):
 
     def on_scroll_start(self, scroll_view, touch):
         """滾動開始時的處理"""
+        Clock.unschedule(self._check_inertia_scroll)
         logger.debug(f"四星彩重複記錄詳情滾動開始事件觸發！")
         
         # 檢查是否禁用滾動事件
@@ -2242,6 +2247,7 @@ class Lotto4StarDuplicateDetailScreen(Screen):
 
     def _start_inertia_monitoring(self, scroll_view):
         """開始監控慣性滾動"""
+        Clock.unschedule(self._check_inertia_scroll)
         # 記錄當前滾動位置
         self._last_scroll_y = scroll_view.scroll_y
         self._inertia_check_count = 0
@@ -2927,6 +2933,7 @@ class Lotto4StarWinningDetailsScreen(Screen):
 
     def on_scroll_start(self, scroll_view, touch):
         """滾動開始時的處理"""
+        Clock.unschedule(self._check_inertia_scroll)
         if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
             return
         
@@ -2984,6 +2991,7 @@ class Lotto4StarWinningDetailsScreen(Screen):
 
     def _start_inertia_monitoring(self, scroll_view):
         """開始監控慣性滾動"""
+        Clock.unschedule(self._check_inertia_scroll)
         self._last_scroll_y = scroll_view.scroll_y
         self._inertia_check_count = 0
         Clock.schedule_interval(self._check_inertia_scroll, 0.1)

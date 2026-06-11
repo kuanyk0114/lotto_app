@@ -1007,6 +1007,7 @@ class PowerLottoResultScreen(BaseAdvancedResultScreen):
     
     def on_scroll_start(self, scroll_view, touch):
         """滾動開始時禁用排序按鈕"""
+        Clock.unschedule(self._check_inertia_scroll)
         # 檢查是否禁用滾動事件
         if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
             logger.debug("威力彩滾動事件被禁用，忽略滾動開始")
@@ -1071,6 +1072,7 @@ class PowerLottoResultScreen(BaseAdvancedResultScreen):
     
     def _start_inertia_monitoring(self, scroll_view):
         """開始監控慣性滾動"""
+        Clock.unschedule(self._check_inertia_scroll)
         # 記錄當前滾動位置
         self._last_scroll_y = scroll_view.scroll_y
         self._inertia_check_count = 0
@@ -1809,6 +1811,7 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
 
     def on_scroll_start(self, scroll_view, touch):
         """滾動開始時的處理"""
+        Clock.unschedule(self._check_inertia_scroll)
         if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
             return
         
@@ -1862,6 +1865,7 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
 
     def _start_inertia_monitoring(self, scroll_view):
         """開始監控慣性滾動"""
+        Clock.unschedule(self._check_inertia_scroll)
         # 記錄當前滾動位置
         self._last_scroll_y = scroll_view.scroll_y
         self._inertia_check_count = 0

@@ -1359,6 +1359,11 @@ class BaseScrollMixin:
             logger.debug(f"{self.__class__.__name__} 滾動事件被禁用，忽略滾動開始")
             return
         
+        # 避免定時器洩漏：若有舊的慣性定時器，立即取消它
+        if hasattr(self, '_inertia_timer') and self._inertia_timer:
+            Clock.unschedule(self._inertia_timer)
+            self._inertia_timer = None
+            
         # 記錄觸摸開始位置和時間
         self._touch_start_pos = touch.pos
         self._touch_start_time = touch.time_start
@@ -1421,16 +1426,22 @@ class BaseScrollMixin:
     
     def _start_inertia_monitoring(self, scroll_view):
         """開始監控慣性滾動"""
+        # 避免定時器洩漏：若有舊的定時器，先取消它
+        if hasattr(self, '_inertia_timer') and self._inertia_timer:
+            Clock.unschedule(self._inertia_timer)
+            self._inertia_timer = None
+            
         # 記錄當前滾動位置
         self._last_scroll_y = scroll_view.scroll_y
         self._inertia_check_count = 0
         
-        # 每0.1秒檢查一次滾動位置
-        Clock.schedule_interval(self._check_inertia_scroll, 0.1)
+        # 啟動並儲存定時器引用，以利於下一次滑動時取消
+        self._inertia_timer = Clock.schedule_interval(self._check_inertia_scroll, 0.1)
     
     def _check_inertia_scroll(self, dt):
         """檢查慣性滾動是否結束"""
         if not hasattr(self.ids, 'scroll_view'):
+            self._inertia_timer = None
             return False
         
         scroll_view = self.ids.scroll_view
@@ -1450,6 +1461,7 @@ class BaseScrollMixin:
             # 檢查是否需要載入更多
             self._check_load_more(scroll_view)
             
+            self._inertia_timer = None
             return False  # 停止定時檢查
         
         # 更新上次位置
@@ -1459,6 +1471,7 @@ class BaseScrollMixin:
         if self._inertia_check_count >= 30:
             logger.warning(f"{self.__class__.__name__} 慣性檢查超時，強制啟用排序功能")
             Clock.schedule_once(lambda dt: self._set_scrolling_state(False), 0.1)
+            self._inertia_timer = None
             return False
         
         return True  # 繼續檢查
