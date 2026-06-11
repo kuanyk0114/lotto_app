@@ -1568,32 +1568,8 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
         except Exception as e:
             logger.exception(f"重複查詢錯誤: {str(e)}")
 
-    def _initialize_pagination(self):
-        """初始化分頁參數"""
-        total_records = len(self.all_results)
-        self.current_page = 0
-        self.displayed_results = []
-        self.has_more_data = total_records > self.page_size
-        
-        logger.debug(f"威力彩重複六碼分頁初始化: 總筆數={total_records}, 每頁={self.page_size}")
-    
-    def _load_first_page(self):
-        """載入第一頁資料"""
-        if self.all_results:
-            end_index = min(self.page_size, len(self.all_results))
-            self.displayed_results = self.all_results[:end_index]
-            self.current_page = 1
-            self._update_result_list()
-            
-            # 檢查是否還有更多資料
-            self.has_more_data = end_index < len(self.all_results)
-            logger.debug(f"威力彩重複六碼第一頁載入完成: 顯示 1-{end_index} 筆，共 {len(self.all_results)} 筆")
-        else:
-            self.has_more_data = False
-            self._update_result_list()  # 顯示無資料
-
     def _update_result_list(self):
-        """更新結果列表顯示"""
+        """更新結果列表顯示 - 實現基類抽象方法"""
         try:
             # 清空結果列表
             self.ids.duplicate_list.clear_widgets()
@@ -1603,6 +1579,7 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
                 self.ids.total_count_label.text = f"總筆數: {len(self.all_results)}"
             
             if not self.displayed_results:
+                self.ids.duplicate_list.height = dp(50)
                 self.ids.duplicate_list.add_widget(Label(
                     text="沒有重複的六碼組合",
                     font_name='ChineseFont',
@@ -1615,6 +1592,11 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
                     padding=(0, dp(20))
                 ))
                 return
+
+            # 預先計算並設定 layout 的高度以防止動態尺寸重新繪製造成的卡頓
+            num_items = len(self.displayed_results)
+            calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
+            self.ids.duplicate_list.height = calculated_height
 
             # 顯示當前頁的結果
             for item in self.displayed_results:
@@ -1634,6 +1616,45 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
             
         except Exception as e:
             logger.exception(f"威力彩重複六碼更新列表錯誤: {str(e)}")
+
+    def _append_to_result_list(self, new_records):
+        """追加新記錄到結果列表 - 實現基類抽象方法"""
+        try:
+            # 保存當前滾動位置
+            scroll_view = self.ids.scroll_view
+            content_height_before = self.ids.duplicate_list.height
+            viewport_height = scroll_view.height
+            current_absolute_scroll = (1 - scroll_view.scroll_y) * max(0, content_height_before - viewport_height)
+            
+            # 移除舊的載入指示器
+            self._remove_load_more_indicator()
+            
+            # 添加新記錄
+            for item in new_records:
+                item_widget = self._create_duplicate_item(item)
+                self.ids.duplicate_list.add_widget(item_widget)
+                
+                # 添加分隔線（除了最後一個項目）
+                if item != new_records[-1] or len(self.displayed_results) < len(self.all_results):
+                    separator = BoxLayout(size_hint_y=None, height=dp(1))
+                    with separator.canvas:
+                        Color(rgba=get_color_from_hex('#888888'))
+                        Rectangle(pos=separator.pos, size=separator.size)
+                    self.ids.duplicate_list.add_widget(separator)
+            
+            # 預先計算並設定 layout 的高度以防止動態尺寸重新繪製造成的卡頓
+            num_items = len(self.displayed_results)
+            calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
+            self.ids.duplicate_list.height = calculated_height
+
+            # 重新添加載入指示器
+            self._add_load_more_indicator()
+            
+            # 恢復滾動位置
+            Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.05)
+            
+        except Exception as e:
+            logger.exception(f"威力彩重複六碼追加記錄錯誤: {str(e)}")
 
     def _create_duplicate_item(self, item):
         """創建重複號碼項目的UI組件"""
@@ -1707,68 +1728,10 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
         self.load_more_indicator = load_more_box
         self.load_more_label = load_more_label
 
-    def _load_next_page(self):
-        """載入下一頁資料"""
-        if self.is_loading_more or not self.has_more_data:
-            return
-        
-        self.is_loading_more = True
-        self._show_loading_indicator()
-        Clock.schedule_once(lambda dt: self._perform_load_next_page(), 0.2)
-
-    def _perform_load_next_page(self):
-        """實際執行下一頁載入"""
-        try:
-            # 保存當前滾動位置
-            scroll_view = self.ids.scroll_view
-            content_height_before = self.ids.duplicate_list.height
-            viewport_height = scroll_view.height
-            current_absolute_scroll = (1 - scroll_view.scroll_y) * max(0, content_height_before - viewport_height)
-            
-            start_index = len(self.displayed_results)
-            end_index = min(start_index + self.page_size, len(self.all_results))
-            
-            if start_index < len(self.all_results):
-                # 添加下一頁資料
-                next_page_data = self.all_results[start_index:end_index]
-                self.displayed_results.extend(next_page_data)
-                self.current_page += 1
-                
-                # 移除舊的載入指示器
-                self._remove_load_more_indicator()
-                
-                # 添加新記錄
-                for item in next_page_data:
-                    item_widget = self._create_duplicate_item(item)
-                    self.ids.duplicate_list.add_widget(item_widget)
-                    
-                    # 添加分隔線（除了最後一個項目）
-                    if item != next_page_data[-1] or end_index < len(self.all_results):
-                        separator = BoxLayout(size_hint_y=None, height=dp(1))
-                        with separator.canvas:
-                            Color(rgba=get_color_from_hex('#888888'))
-                            Rectangle(pos=separator.pos, size=separator.size)
-                        self.ids.duplicate_list.add_widget(separator)
-                
-                # 檢查是否還有更多資料
-                self.has_more_data = end_index < len(self.all_results)
-                
-                # 重新添加載入指示器
-                self._add_load_more_indicator()
-                
-                # 恢復滾動位置
-                Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.1)
-                
-                logger.debug(f"威力彩重複六碼載入第{self.current_page}頁: 顯示 {start_index+1}-{end_index} 筆")
-                
-            else:
-                self.has_more_data = False
-                
-        except Exception as e:
-            logger.exception(f"威力彩重複六碼載入下一頁錯誤: {str(e)}")
-        finally:
-            self.is_loading_more = False
-            self._hide_loading_indicator()
+    def _remove_load_more_indicator(self):
+        """移除載入更多指示器"""
+        if hasattr(self, 'load_more_indicator') and hasattr(self.ids, 'duplicate_list') and self.load_more_indicator in self.ids.duplicate_list.children:
+            self.ids.duplicate_list.remove_widget(self.load_more_indicator)
 
     def _restore_scroll_position_absolute(self, target_absolute_scroll):
         """恢復到指定的絕對滾動位置"""
@@ -1779,6 +1742,7 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
             
             if content_height > viewport_height:
                 max_scroll_distance = content_height - viewport_height
+                # 準確定位，不加任何偏移以確保無縫滑動
                 new_scroll_y = 1 - (target_absolute_scroll / max_scroll_distance)
                 new_scroll_y = max(0, min(1, new_scroll_y))
                 scroll_view.scroll_y = new_scroll_y
@@ -1788,223 +1752,11 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
         except Exception as e:
             logger.exception(f"威力彩重複六碼恢復滾動位置錯誤: {str(e)}")
 
-    def _show_loading_indicator(self):
-        """顯示載入更多指示器"""
-        if hasattr(self, 'load_more_label'):
-            self.load_more_label.text = "載入中..."
-            self.load_more_label.opacity = 1
-
-    def _hide_loading_indicator(self):
-        """隱藏載入更多指示器"""
-        if hasattr(self, 'load_more_label'):
-            if self.has_more_data:
-                self.load_more_label.text = "滑動到底部載入更多"
-                self.load_more_label.opacity = 0.7
-            else:
-                self.load_more_label.text = "已顯示全部資料"
-                self.load_more_label.opacity = 0.5
-
-    def _remove_load_more_indicator(self):
-        """移除載入更多指示器"""
-        if hasattr(self, 'load_more_indicator') and hasattr(self.ids, 'duplicate_list') and self.load_more_indicator in self.ids.duplicate_list.children:
-            self.ids.duplicate_list.remove_widget(self.load_more_indicator)
-
-    def on_scroll_start(self, scroll_view, touch):
-        """滾動開始時的處理"""
-        Clock.unschedule(self._check_inertia_scroll)
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            return
-        
-        self._touch_start_pos = touch.pos
-        self._touch_start_time = touch.time_start
-
-    def on_scroll_move(self, scroll_view, touch):
-        """滾動移動時檢查是否為真正的滑動"""
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            return
-        
-        if not hasattr(self, '_touch_start_pos') or not hasattr(self, '_touch_start_time'):
-            return
-        
-        if self._touch_start_pos:
-            dx = abs(touch.pos[0] - self._touch_start_pos[0])
-            dy = abs(touch.pos[1] - self._touch_start_pos[1])
-            distance = (dx * dx + dy * dy) ** 0.5
-            
-            if distance > 20:
-                if not self.is_scrolling:
-                    self.is_scrolling = True
-
-    def on_scroll_end(self, scroll_view, touch):
-        """滾動結束時檢查是否需要載入更多"""
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            return
-        
-        # 計算總移動距離
-        distance = 0
-        if hasattr(self, '_touch_start_pos') and hasattr(self, '_touch_start_time'):
-            if self._touch_start_pos:
-                dx = abs(touch.pos[0] - self._touch_start_pos[0])
-                dy = abs(touch.pos[1] - self._touch_start_pos[1])
-                distance = (dx * dx + dy * dy) ** 0.5
-        
-        # 如果有明顯滑動，需要等待慣性滾動結束
-        if distance > 20:
-            # 開始監控慣性滾動
-            self._start_inertia_monitoring(scroll_view)
-        else:
-            # 沒有明顯滑動，立即重新啟用功能
-            self.is_scrolling = False
-        
-        # 清除觸摸記錄
-        self._touch_start_pos = None
-        self._touch_start_time = None
-        
-        # 立即檢查是否需要載入更多
-        self._check_load_more_immediate(scroll_view)
-
-    def _start_inertia_monitoring(self, scroll_view):
-        """開始監控慣性滾動"""
-        Clock.unschedule(self._check_inertia_scroll)
-        # 記錄當前滾動位置
-        self._last_scroll_y = scroll_view.scroll_y
-        self._inertia_check_count = 0
-        
-        # 每0.1秒檢查一次滾動位置
-        Clock.schedule_interval(self._check_inertia_scroll, 0.1)
-
-    def _check_inertia_scroll(self, dt):
-        """檢查慣性滾動是否結束"""
-        if not hasattr(self.ids, 'scroll_view'):
-            return False
-        
-        scroll_view = self.ids.scroll_view
-        current_scroll_y = scroll_view.scroll_y
-        
-        # 計算滾動位置變化
-        scroll_change = abs(current_scroll_y - self._last_scroll_y)
-        self._inertia_check_count += 1
-        
-        # 如果滾動位置變化很小，認為慣性滾動結束
-        if scroll_change < 0.001:  # 位置變化小於0.001
-            self.is_scrolling = False
-            
-            # 檢查是否需要載入更多
-            self._check_load_more(scroll_view)
-            
-            return False  # 停止定時檢查
-        
-        # 更新上次位置
-        self._last_scroll_y = current_scroll_y
-        
-        # 最多檢查30次（3秒），避免無限檢查
-        if self._inertia_check_count >= 30:
-            self.is_scrolling = False
-            return False
-        
-        return True  # 繼續檢查
-
-    def _check_load_more_immediate(self, scroll_view):
-        """立即檢查是否需要載入更多資料"""
-        if not self.has_more_data or self.is_loading_more:
-            return
-        
-        # 檢查是否接近底部
-        content_height = self.ids.duplicate_list.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        # 當剩餘內容少於1.5個螢幕高度時開始載入
-        if remaining_content <= viewport_height * 1.5:
-            logger.debug(f"威力彩重複六碼立即檢測到接近底部，載入下一頁")
-            self._load_next_page()
-
-    def _check_load_more(self, scroll_view):
-        """檢查是否需要載入更多資料（慣性滾動結束後的補充檢查）"""
-        if not self.has_more_data or self.is_loading_more:
-            return
-        
-        # 檢查是否接近底部
-        content_height = self.ids.duplicate_list.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        # 當剩餘內容少於1.5個螢幕高度時開始載入
-        if remaining_content <= viewport_height * 1.5:
-            logger.debug(f"威力彩重複六碼慣性滾動結束後檢測到接近底部，載入下一頁")
-            self._load_next_page()
-    
-    def populate_duplicate_list(self):
-        """填充重複號碼列表"""
-        duplicate_list = self.ids.duplicate_list
-        duplicate_list.clear_widgets()
-        
-        if not self.duplicates:
-            duplicate_list.add_widget(Label(
-                text="沒有重複的六碼組合",
-                font_name='ChineseFont',
-                font_size=dp(18),
-                color=get_color_from_hex('#FF0000'),
-                halign='center',
-                valign='middle',
-                size_hint_y=None,
-                height=dp(50),
-                padding=(0, dp(20))  # 增加上下padding
-            ))
-            return
-        
-        for item in self.duplicates:
-            # 創建重複條目 主容器 (單行)
-            box = ClickableBoxLayout(
-                orientation='horizontal',
-                size_hint_y=None,
-                height=dp(50),
-                spacing=dp(5),
-                padding=(dp(10), dp(5)))
-
-            # 第一區號碼球 (黃色)
-            for num in sorted(item['numbers']):
-                ball = ResultBall(
-                    number=num, 
-                    area=1,  # 第一區用黃色
-                    size_hint=(None, None),
-                    size=(dp(30), dp(30)))  # 固定球大小
-                box.add_widget(ball)
-        
-            # 重複次數 (白色文字)
-            count_label = Label(
-                text=f"({item['count']}次)",  # 只顯示次數
-                font_name='ChineseFont',
-                font_size=dp(20),
-                color=(1, 1, 1, 1),  # 白色
-                size_hint_x=None,
-                width=dp(40),
-                halign='center'
-            )
-            box.add_widget(count_label)
-        
-            # 點擊事件（單擊/雙擊都會觸發）
-            box.bind(on_release=lambda instance, item=item: 
-                    self._handle_duplicate_item_click(instance, item))
-        
-            duplicate_list.add_widget(box)
-
-        
-            # 分隔線
-            separator = BoxLayout(size_hint_y=None, height=dp(1))
-            with separator.canvas:
-                Color(rgba=get_color_from_hex('#888888'))
-                Rectangle(pos=separator.pos, size=separator.size)
-            duplicate_list.add_widget(separator)
-
     def _handle_duplicate_item_click(self, instance, item):
         """處理重複項目的點擊事件 - 單擊/雙擊都顯示詳細資訊"""
         # 無論單擊或雙擊都顯示詳細資訊
         self.show_duplicate_details(item['numbers'])
 
-    
     def show_duplicate_details(self, numbers):
         """從 SQLite 載入詳細記錄"""
         app = App.get_running_app()
@@ -2051,11 +1803,6 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
         detail_screen.details = details
         self.manager.current = 'power_duplicate_detail'
 
-    #def on_duplicate_item_click(self, instance, touch, item):
-    #    """處理重複項目的點擊事件"""
-    #    if instance.collide_point(*touch.pos):
-    #        self.show_duplicate_details(item['numbers'])
-    
     def back_to_query(self):
         from kivy.app import App
         App.get_running_app().ad_manager.show_interstitial(on_close_callback=self._real_back_to_query)
@@ -2063,7 +1810,6 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
     def _real_back_to_query(self):
         """返回查詢界面"""
         self.manager.current = 'power_query'
-
 
 class PowerLottoDuplicateDetailScreen(BaseAdvancedResultScreen):
     """重複六碼詳細信息界面"""

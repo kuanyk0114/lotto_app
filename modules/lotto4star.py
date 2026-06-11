@@ -1357,6 +1357,7 @@ class Lotto4StarRepeatedNumbersScreen(Screen):
             self.ids.duplicate_list.clear_widgets()
             
             if not self.displayed_results:
+                self.ids.duplicate_list.height = dp(50)
                 self.ids.duplicate_list.add_widget(Label(
                     text="沒有重複的四碼組合",
                     font_name='ChineseFont',
@@ -1369,6 +1370,11 @@ class Lotto4StarRepeatedNumbersScreen(Screen):
                     padding=(0, dp(20))
                 ))
                 return
+
+            # 預先計算並設定 layout 的高度以防止動態尺寸重新繪製造成的卡頓
+            num_items = len(self.displayed_results)
+            calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
+            self.ids.duplicate_list.height = calculated_height
 
             # 顯示當前頁的結果
             for item in self.displayed_results:
@@ -1544,6 +1550,11 @@ class Lotto4StarRepeatedNumbersScreen(Screen):
                 self.displayed_results.extend(next_page_data)
                 self.current_page += 1
                 
+                # 預先計算並設定 layout 的高度以防止動態尺寸重新繪製造成的卡頓
+                num_items = len(self.displayed_results)
+                calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
+                self.ids.duplicate_list.height = calculated_height
+
                 # 移除舊的載入指示器
                 self._remove_load_more_indicator()
                 
@@ -1567,7 +1578,7 @@ class Lotto4StarRepeatedNumbersScreen(Screen):
                 self._add_load_more_indicator()
                 
                 # 恢復滾動位置
-                Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.1)
+                Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.05)
                 
                 logger.debug(f"四星彩重複四碼載入第{self.current_page}頁: 顯示 {start_index+1}-{end_index} 筆")
                 
@@ -1590,6 +1601,7 @@ class Lotto4StarRepeatedNumbersScreen(Screen):
             
             if content_height > viewport_height:
                 max_scroll_distance = content_height - viewport_height
+                # 準確定位，不加任何偏移以確保無縫滑動
                 new_scroll_y = 1 - (target_absolute_scroll / max_scroll_distance)
                 new_scroll_y = max(0, min(1, new_scroll_y))
                 scroll_view.scroll_y = new_scroll_y

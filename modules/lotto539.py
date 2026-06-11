@@ -2078,325 +2078,7 @@ class Lotto539WinningDetailsScreen(Screen):
         return None, ''
 
 
-class Lotto539DuplicateScreen(Screen):
-    """重複五碼查詢界面"""
-    duplicates = ListProperty([])
-    
-    # 分頁相關屬性
-    all_duplicates = ListProperty([])  # 完整查詢結果
-    displayed_duplicates = ListProperty([])  # 當前顯示的結果
-    current_page = NumericProperty(0)     # 當前頁數
-    page_size = NumericProperty(30)       # 每頁顯示數量
-    is_loading_more = BooleanProperty(False)  # 是否正在載入更多
-    has_more_data = BooleanProperty(True)     # 是否還有更多資料
-    is_scrolling = BooleanProperty(False)     # 是否正在滾動
-    
-    def on_pre_enter(self):
-        """進入屏幕前執行查詢"""
-        # 確保滾動狀態正確初始化
-        self.is_scrolling = False
-        self._scroll_events_disabled = False
-        logger.debug(f"今彩539重複五碼進入頁面，初始化滾動狀態: {self.is_scrolling}")
-        
-        # 重置分頁狀態
-        self._reset_pagination_state()
-        
-        # 清空列表並重置滾動位置
-        if hasattr(self.ids, 'duplicate_list'):
-            self.ids.duplicate_list.clear_widgets()
-        self._reset_scroll_to_top()
-        
-        # 顯示載入中彈窗
-        self.loading_popup = LoadingPopup(title='查詢重複五碼中')
-        self.loading_popup.open()
-    
-        # 使用 Clock.schedule_once 延遲執行查詢，確保UI更新
-        Clock.schedule_once(lambda dt: self._perform_duplicate_query(), 0.1)
 
-    def _reset_pagination_state(self):
-        """重置分頁狀態"""
-        self.duplicates = []
-        self.all_duplicates = []
-        self.displayed_duplicates = []
-        self.current_page = 0
-        self.is_loading_more = False
-        self.has_more_data = True
-        logger.debug("今彩539重複五碼重置分頁狀態")
-
-    def _reset_scroll_to_top(self):
-        """重置滾動位置到頂部"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                scroll_view.scroll_y = 1  # 滾動到頂部
-                logger.debug("今彩539重複五碼滾動位置重置到頂部")
-        except Exception as e:
-            logger.exception(f"今彩539重複五碼重置滾動位置錯誤: {str(e)}")
-    
-    def _perform_duplicate_query(self):
-        """實際執行重複查詢的方法"""
-        try:
-            # 1. 執行完整查詢
-            self.find_duplicates()
-            self.all_duplicates = self.duplicates.copy()  # 保存完整結果
-            
-            # 2. 初始化分頁
-            self._initialize_pagination()
-            
-            # 3. 載入第一頁資料並顯示
-            self._load_first_page()
-            self.populate_duplicate_list()
-            
-            # 關閉載入彈窗
-            self.loading_popup.dismiss()
-            
-        except Exception as e:
-            error_msg = f"查詢重複五碼失敗: {str(e)}"
-            logger.exception(error_msg)
-            self.loading_popup.dismiss()
-            self.show_popup("錯誤", error_msg)
-            traceback.print_exc()
-
-    def _initialize_pagination(self):
-        """初始化分頁參數"""
-        total_records = len(self.all_duplicates)
-        self.current_page = 0
-        self.displayed_duplicates = []
-        self.has_more_data = total_records > 0
-        
-        logger.debug(f"今彩539重複五碼分頁初始化: 總筆數={total_records}, 每頁={self.page_size}")
-    
-    def _load_first_page(self):
-        """載入第一頁資料"""
-        if self.all_duplicates:
-            end_index = min(self.page_size, len(self.all_duplicates))
-            self.displayed_duplicates = self.all_duplicates[:end_index]
-            self.duplicates = self.displayed_duplicates.copy()  # 更新顯示用的duplicates
-            self.current_page = 1
-            
-            # 檢查是否還有更多資料
-            self.has_more_data = end_index < len(self.all_duplicates)
-            logger.debug(f"今彩539重複五碼第一頁載入完成: 顯示 1-{end_index} 筆，共 {len(self.all_duplicates)} 筆")
-        else:
-            self.duplicates = []
-            self.displayed_duplicates = []
-
-
-    def _add_load_more_indicator(self):
-        """添加載入更多指示器"""
-        if self.has_more_data:
-            load_more_box = BoxLayout(
-                orientation='vertical',
-                size_hint_y=None,
-                height=dp(60),
-                padding=(dp(10), dp(10))
-            )
-            
-            load_more_label = Label(
-                text="滑動到底部載入更多",
-                font_name='ChineseFont',
-                font_size=dp(14),
-                color=get_color_from_hex('#888888'),
-                halign='center',
-                valign='middle'
-            )
-            load_more_label.bind(size=lambda instance, value: setattr(instance, 'text_size', value))
-            
-            load_more_box.add_widget(load_more_label)
-            self.ids.duplicate_list.add_widget(load_more_box)
-            
-            # 儲存引用以便後續更新
-            self.load_more_indicator = load_more_box
-            self.load_more_label = load_more_label
-
-    def _load_next_page(self):
-        """載入下一頁資料"""
-        if self.is_loading_more or not self.has_more_data:
-            return
-        
-        self.is_loading_more = True
-        
-        # 顯示載入提示
-        self._show_loading_indicator()
-        
-        # 延遲載入，避免UI阻塞
-        Clock.schedule_once(lambda dt: self._perform_load_next_page(), 0.2)
-
-    def _perform_load_next_page(self):
-        """實際執行下一頁載入"""
-        try:
-            start_index = len(self.displayed_duplicates)
-            end_index = min(start_index + self.page_size, len(self.all_duplicates))
-            
-            if start_index < len(self.all_duplicates):
-                # 添加下一頁資料
-                next_page_data = self.all_duplicates[start_index:end_index]
-                self.displayed_duplicates.extend(next_page_data)
-                self.duplicates = self.displayed_duplicates.copy()  # 更新顯示用的duplicates
-                self.current_page += 1
-                
-                # 重新顯示所有資料（保持原始顯示方式）
-                self.populate_duplicate_list()
-                
-                # 檢查是否還有更多資料
-                self.has_more_data = end_index < len(self.all_duplicates)
-                
-                logger.debug(f"今彩539重複五碼載入第{self.current_page}頁: 顯示 {start_index+1}-{end_index} 筆")
-                
-            else:
-                self.has_more_data = False
-                
-        except Exception as e:
-            logger.exception(f"今彩539重複五碼載入下一頁錯誤: {str(e)}")
-            show_popup("錯誤", "載入更多資料失敗")
-        finally:
-            self.is_loading_more = False
-            self._hide_loading_indicator()
-
-    def _show_loading_indicator(self):
-        """顯示載入更多指示器"""
-        if hasattr(self, 'load_more_label'):
-            self.load_more_label.text = "載入中..."
-            self.load_more_label.opacity = 1
-
-    def _hide_loading_indicator(self):
-        """隱藏載入更多指示器"""
-        if hasattr(self, 'load_more_label'):
-            if self.has_more_data:
-                self.load_more_label.text = "滑動到底部載入更多"
-                self.load_more_label.opacity = 0.7
-            else:
-                self.load_more_label.text = "已顯示全部資料"
-                self.load_more_label.opacity = 0.5
-
-
-    def _remove_load_more_indicator(self):
-        """移除載入更多指示器"""
-        if hasattr(self, 'load_more_indicator') and hasattr(self.ids, 'duplicate_list') and self.load_more_indicator in self.ids.duplicate_list.children:
-            self.ids.duplicate_list.remove_widget(self.load_more_indicator)
-
-    def show_duplicate_detail(self, duplicate):
-        """顯示重複五碼詳情"""
-        detail_screen = self.manager.get_screen('lotto539_duplicate_detail')
-        detail_screen.duplicate_numbers = duplicate['numbers']
-        self.manager.current = 'lotto539_duplicate_detail'
-
-    def on_scroll_start(self, scroll_view, touch):
-        """滾動開始時記錄觸摸位置"""
-        Clock.unschedule(self._check_inertia_scroll)
-        # 記錄觸摸開始位置和時間
-        self._touch_start_pos = touch.pos
-        self._touch_start_time = touch.time_start
-        logger.debug(f"今彩539重複五碼觸摸開始: 位置{touch.pos}")
-
-    def on_scroll_move(self, scroll_view, touch):
-        """滾動移動時檢查是否為真正的滑動"""
-        # 檢查是否有觸摸開始記錄
-        if not hasattr(self, '_touch_start_pos') or not hasattr(self, '_touch_start_time'):
-            return
-        
-        # 計算移動距離
-        if self._touch_start_pos:
-            dx = abs(touch.pos[0] - self._touch_start_pos[0])
-            dy = abs(touch.pos[1] - self._touch_start_pos[1])
-            distance = (dx * dx + dy * dy) ** 0.5
-            
-            # 只有移動距離超過閾值才認為是滑動（不需要排序按鈕禁用功能）
-            if distance > 10:  # 10像素的移動閾值
-                if not self.is_scrolling:
-                    self.is_scrolling = True
-                    logger.debug(f"今彩539重複五碼檢測到滑動，移動距離: {distance:.1f}px")
-
-    def on_scroll_end(self, scroll_view, touch):
-        """滾動結束時檢查是否需要載入更多"""
-        # 計算總移動距離和時間
-        if hasattr(self, '_touch_start_pos') and hasattr(self, '_touch_start_time'):
-            if self._touch_start_pos:
-                dx = abs(touch.pos[0] - self._touch_start_pos[0])
-                dy = abs(touch.pos[1] - self._touch_start_pos[1])
-                distance = (dx * dx + dy * dy) ** 0.5
-                duration = touch.time_start - self._touch_start_time
-                
-                logger.debug(f"今彩539重複五碼觸摸結束: 移動距離{distance:.1f}px, 持續時間{duration:.2f}s")
-                
-                # 如果有滑動，需要等待慣性滾動結束
-                if distance > 10:
-                    # 開始監控慣性滾動
-                    self._start_inertia_monitoring(scroll_view)
-                    logger.debug("今彩539重複五碼開始監控慣性滾動")
-        
-        # 清除觸摸記錄
-        self._touch_start_pos = None
-        self._touch_start_time = None
-        
-        # 立即檢查是否需要載入更多（不等慣性滾動結束）
-        self._check_load_more_immediate(scroll_view)
-
-    def _start_inertia_monitoring(self, scroll_view):
-        """開始監控慣性滾動"""
-        Clock.unschedule(self._check_inertia_scroll)
-        # 記錄當前滾動位置
-        self._last_scroll_y = scroll_view.scroll_y
-        self._inertia_check_count = 0
-        
-        # 每0.1秒檢查一次滾動位置
-        Clock.schedule_interval(self._check_inertia_scroll, 0.1)
-
-    def _check_inertia_scroll(self, dt):
-        """檢查慣性滾動是否結束"""
-        if not hasattr(self.ids, 'scroll_view'):
-            return False
-        
-        scroll_view = self.ids.scroll_view
-        current_scroll_y = scroll_view.scroll_y
-        
-        # 計算滾動位置變化
-        scroll_change = abs(current_scroll_y - self._last_scroll_y)
-        self._inertia_check_count += 1
-        
-        logger.debug(f"今彩539重複五碼慣性檢查 {self._inertia_check_count}: 位置變化 {scroll_change:.4f}")
-        
-        # 如果滾動位置變化很小，認為慣性滾動結束
-        if scroll_change < 0.0005:  # 位置變化小於0.0005
-            logger.debug("今彩539重複五碼慣性滾動結束，啟用排序按鈕")
-            self.is_scrolling = False
-            
-            # 檢查是否需要載入更多
-            self._check_load_more(scroll_view)
-            
-            return False  # 停止定時檢查
-        
-        # 更新上次位置
-        self._last_scroll_y = current_scroll_y
-        
-        # 最多檢查50次（5秒），避免無限檢查
-        if self._inertia_check_count >= 50:
-            logger.warning("今彩539重複五碼慣性檢查超時，強制啟用排序按鈕")
-            self.is_scrolling = False
-            return False
-        
-        return True  # 繼續檢查
-
-    def _check_load_more_immediate(self, scroll_view):
-        """立即檢查是否需要載入更多資料（不等慣性滾動結束）"""
-        if not self.has_more_data or self.is_loading_more:
-            return
-        
-        # 檢查是否接近底部（在到達底部前就開始載入）
-        content_height = self.ids.duplicate_list.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        # 當剩餘內容少於1.5個螢幕高度時開始載入
-        if remaining_content <= viewport_height * 1.5:
-            logger.debug(f"今彩539重複五碼立即檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
-            self._load_next_page()
-
-    def _check_load_more(self, scroll_view):
-        """檢查是否需要載入更多資料（慣性滾動結束後的補充檢查）"""
-        if not self.has_more_data or self.is_loading_more:
-            return
         
         # 檢查是否接近底部（在到達底部前就開始載入）
         content_height = self.ids.duplicate_list.height
@@ -3141,6 +2823,7 @@ class Lotto539DuplicateScreen(BaseAdvancedResultScreen):
                 self.ids.total_count_label.text = f"總筆數: {len(self.all_results)}"
             
             if not self.displayed_results:
+                self.ids.duplicate_list.height = dp(50)
                 self.ids.duplicate_list.add_widget(Label(
                     text="沒有重複的五碼組合",
                     font_name='ChineseFont',
@@ -3153,6 +2836,11 @@ class Lotto539DuplicateScreen(BaseAdvancedResultScreen):
                     padding=(0, dp(20))
                 ))
                 return
+
+            # 預先計算並設定 layout 的高度以防止動態尺寸重新繪製造成的卡頓
+            num_items = len(self.displayed_results)
+            calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
+            self.ids.duplicate_list.height = calculated_height
 
             # 顯示當前頁的結果
             for item in self.displayed_results:
@@ -3199,28 +2887,21 @@ class Lotto539DuplicateScreen(BaseAdvancedResultScreen):
                         Rectangle(pos=separator.pos, size=separator.size)
                     self.ids.duplicate_list.add_widget(separator)
             
+            # 預先計算並設定 layout 的高度以防止動態尺寸重新繪製造成的卡頓
+            num_items = len(self.displayed_results)
+            calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
+            self.ids.duplicate_list.height = calculated_height
+
             # 重新添加載入指示器
             self._add_load_more_indicator()
             
             # 恢復滾動位置
-            Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.1)
+            Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.05)
             
         except Exception as e:
             logger.exception(f"今彩539重複五碼追加記錄錯誤: {str(e)}")
             traceback.print_exc()
     
-    def _create_duplicate_item(self, item):
-        """創建重複項目的UI組件"""
-        # 這個方法需要根據今彩539的具體UI需求來實現
-        # 暫時返回一個基本的Label，實際實現時需要根據原有邏輯調整
-        return Label(
-            text=f"重複組合: {item}",
-            font_name='ChineseFont',
-            font_size=dp(14),
-            size_hint_y=None,
-            height=dp(40),
-            halign='left'
-        )
 
     def on_pre_enter(self):
         # 確保滾動狀態正確初始化
@@ -3446,227 +3127,29 @@ class Lotto539DuplicateScreen(BaseAdvancedResultScreen):
         self.load_more_indicator = load_more_box
         self.load_more_label = load_more_label
 
-    # 添加完整的分頁載入功能
-    def _load_next_page(self):
-        """載入下一頁資料"""
-        if self.is_loading_more or not self.has_more_data:
-            return
-        
-        self.is_loading_more = True
-        self._show_loading_indicator()
-        Clock.schedule_once(lambda dt: self._perform_load_next_page(), 0.2)
-
-    def _perform_load_next_page(self):
-        """實際執行下一頁載入"""
-        try:
-            start_index = len(self.displayed_results)
-            end_index = min(start_index + self.page_size, len(self.all_results))
-            
-            if start_index < len(self.all_results):
-                # 添加下一頁資料
-                next_page_data = self.all_results[start_index:end_index]
-                self.displayed_results.extend(next_page_data)
-                self.current_page += 1
-                
-                # 移除舊的載入指示器
-                self._remove_load_more_indicator()
-                
-                # 添加新記錄
-                for item in next_page_data:
-                    item_widget = self._create_duplicate_item(item)
-                    self.ids.duplicate_list.add_widget(item_widget)
-                    
-                    # 添加分隔線
-                    if item != next_page_data[-1] or end_index < len(self.all_results):
-                        separator = BoxLayout(size_hint_y=None, height=dp(1))
-                        with separator.canvas:
-                            Color(rgba=get_color_from_hex('#888888'))
-                            Rectangle(pos=separator.pos, size=separator.size)
-                        self.ids.duplicate_list.add_widget(separator)
-                
-                # 檢查是否還有更多資料
-                self.has_more_data = end_index < len(self.all_results)
-                
-                # 重新添加載入指示器
-                self._add_load_more_indicator()
-                
-                logger.debug(f"今彩539重複五碼載入第{self.current_page}頁: 顯示 {start_index+1}-{end_index} 筆")
-                
-            else:
-                self.has_more_data = False
-                
-        except Exception as e:
-            logger.exception(f"今彩539重複五碼載入下一頁錯誤: {str(e)}")
-            traceback.print_exc()
-        finally:
-            self.is_loading_more = False
-            self._hide_loading_indicator()
-
-    def _show_loading_indicator(self):
-        """顯示載入更多指示器"""
-        if hasattr(self, 'load_more_label'):
-            self.load_more_label.text = "載入中..."
-            self.load_more_label.opacity = 1
-
-    def _hide_loading_indicator(self):
-        """隱藏載入更多指示器"""
-        if hasattr(self, 'load_more_label'):
-            if self.has_more_data:
-                self.load_more_label.text = "滑動到底部載入更多"
-                self.load_more_label.opacity = 0.7
-            else:
-                self.load_more_label.text = "已顯示全部資料"
-                self.load_more_label.opacity = 0.5
-
     def _remove_load_more_indicator(self):
         """移除載入更多指示器"""
         if hasattr(self, 'load_more_indicator') and hasattr(self.ids, 'duplicate_list') and self.load_more_indicator in self.ids.duplicate_list.children:
             self.ids.duplicate_list.remove_widget(self.load_more_indicator)
 
-    def on_scroll_start(self, scroll_view, touch):
-        """滾動開始時的處理"""
-        self._touch_start_pos = touch.pos
-        self._touch_start_time = touch.time_start
-
-    def on_scroll_move(self, scroll_view, touch):
-        """滾動移動時檢查是否為真正的滑動"""
-        if not hasattr(self, '_touch_start_pos'):
-            return
-        
-        if self._touch_start_pos:
-            dx = abs(touch.pos[0] - self._touch_start_pos[0])
-            dy = abs(touch.pos[1] - self._touch_start_pos[1])
-            distance = (dx * dx + dy * dy) ** 0.5
-            
-            if distance > 20:
-                if not self.is_scrolling:
-                    self.is_scrolling = True
-
-    def on_scroll_end(self, scroll_view, touch):
-        """滾動結束時檢查是否需要載入更多"""
-        self.is_scrolling = False
-        self._touch_start_pos = None
-        self._touch_start_time = None
-        self._check_load_more_immediate(scroll_view)
-
-    def _check_load_more_immediate(self, scroll_view):
-        """立即檢查是否需要載入更多資料"""
-        if not self.has_more_data or self.is_loading_more:
-            return
-        
-        content_height = self.ids.duplicate_list.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        if remaining_content <= viewport_height * 1.0:
-            self._load_next_page()
-
-    def _perform_load_next_page(self):
-        """實際執行下一頁載入"""
+    def _restore_scroll_position_absolute(self, target_absolute_scroll):
+        """恢復到指定的絕對滾動位置"""
         try:
-            start_index = len(self.displayed_results)
-            end_index = min(start_index + self.page_size, len(self.all_results))
+            scroll_view = self.ids.scroll_view
+            content_height = self.ids.duplicate_list.height
+            viewport_height = scroll_view.height
             
-            if start_index < len(self.all_results):
-                # 添加下一頁資料
-                next_page_data = self.all_results[start_index:end_index]
-                self.displayed_results.extend(next_page_data)
-                self.current_page += 1
-                
-                # 移除舊的載入指示器
-                self._remove_load_more_indicator()
-                
-                # 添加新記錄
-                for item in next_page_data:
-                    item_widget = self._create_duplicate_item(item)
-                    self.ids.duplicate_list.add_widget(item_widget)
-                    
-                    # 添加分隔線（除了最後一個項目）
-                    if item != next_page_data[-1] or end_index < len(self.all_results):
-                        separator = BoxLayout(size_hint_y=None, height=dp(1))
-                        with separator.canvas:
-                            Color(rgba=get_color_from_hex('#888888'))
-                            Rectangle(pos=separator.pos, size=separator.size)
-                        self.ids.duplicate_list.add_widget(separator)
-                
-                # 檢查是否還有更多資料
-                self.has_more_data = end_index < len(self.all_results)
-                
-                # 重新添加載入指示器
-                self._add_load_more_indicator()
-                
-                logger.debug(f"今彩539重複五碼載入第{self.current_page}頁: 顯示 {start_index+1}-{end_index} 筆")
-                
+            if content_height > viewport_height:
+                max_scroll_distance = content_height - viewport_height
+                # 準確定位，不加任何偏移以確保無縫滑動
+                new_scroll_y = 1 - (target_absolute_scroll / max_scroll_distance)
+                new_scroll_y = max(0, min(1, new_scroll_y))
+                scroll_view.scroll_y = new_scroll_y
             else:
-                self.has_more_data = False
+                scroll_view.scroll_y = 1
                 
         except Exception as e:
-            logger.exception(f"今彩539重複五碼載入下一頁錯誤: {str(e)}")
-            traceback.print_exc()
-        finally:
-            self.is_loading_more = False
-            self._hide_loading_indicator()
-
-    def _show_loading_indicator(self):
-        """顯示載入更多指示器"""
-        if hasattr(self, 'load_more_label'):
-            self.load_more_label.text = "載入中..."
-            self.load_more_label.opacity = 1
-
-    def _hide_loading_indicator(self):
-        """隱藏載入更多指示器"""
-        if hasattr(self, 'load_more_label'):
-            if self.has_more_data:
-                self.load_more_label.text = "滑動到底部載入更多"
-                self.load_more_label.opacity = 0.7
-            else:
-                self.load_more_label.text = "已顯示全部資料"
-                self.load_more_label.opacity = 0.5
-
-    def _remove_load_more_indicator(self):
-        """移除載入更多指示器"""
-        if hasattr(self, 'load_more_indicator') and hasattr(self.ids, 'duplicate_list') and self.load_more_indicator in self.ids.duplicate_list.children:
-            self.ids.duplicate_list.remove_widget(self.load_more_indicator)
-
-    def on_scroll_start(self, scroll_view, touch):
-        """滾動開始時的處理"""
-        self._touch_start_pos = touch.pos
-        self._touch_start_time = touch.time_start
-
-    def on_scroll_move(self, scroll_view, touch):
-        """滾動移動時檢查是否為真正的滑動"""
-        if not hasattr(self, '_touch_start_pos'):
-            return
-        
-        if self._touch_start_pos:
-            dx = abs(touch.pos[0] - self._touch_start_pos[0])
-            dy = abs(touch.pos[1] - self._touch_start_pos[1])
-            distance = (dx * dx + dy * dy) ** 0.5
-            
-            if distance > 20:
-                if not self.is_scrolling:
-                    self.is_scrolling = True
-
-    def on_scroll_end(self, scroll_view, touch):
-        """滾動結束時檢查是否需要載入更多"""
-        self.is_scrolling = False
-        self._touch_start_pos = None
-        self._touch_start_time = None
-        self._check_load_more_immediate(scroll_view)
-
-    def _check_load_more_immediate(self, scroll_view):
-        """立即檢查是否需要載入更多資料"""
-        if not self.has_more_data or self.is_loading_more:
-            return
-        
-        content_height = self.ids.duplicate_list.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        if remaining_content <= viewport_height * 1.0:
-            self._load_next_page()
+            logger.exception(f"今彩539重複五碼恢復滾動位置錯誤: {str(e)}")
 
 
 

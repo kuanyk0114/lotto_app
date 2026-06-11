@@ -1814,6 +1814,8 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
             
             # 如果沒有結果，顯示提示
             if not self.displayed_results:
+                if hasattr(self.ids, 'results_layout'):
+                    self.ids.results_layout.height = dp(100)
                 no_data_label = Label(
                     text='沒有重複的三碼組合',
                     font_name='ChineseFont',
@@ -1827,6 +1829,12 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
                 if hasattr(self.ids, 'results_layout'):
                     self.ids.results_layout.add_widget(no_data_label)
                 return
+
+            # 預先計算並設定 layout 的高度以防止動態尺寸重新繪製造成的卡頓
+            num_items = len(self.displayed_results)
+            calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
+            if hasattr(self.ids, 'results_layout'):
+                self.ids.results_layout.height = calculated_height
 
             # 顯示當前已載入的所有重複號碼項目
             for i, item in enumerate(self.displayed_results):
@@ -1993,6 +2001,12 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
                 self.displayed_results.extend(next_page_data)
                 self.current_page += 1
                 
+                # 預先計算並設定 layout 的高度以防止動態尺寸重新繪製造成的卡頓
+                num_items = len(self.displayed_results)
+                calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
+                if hasattr(self.ids, 'results_layout'):
+                    self.ids.results_layout.height = calculated_height
+
                 # 移除舊的載入指示器
                 self._remove_load_more_indicator()
                 
@@ -2016,7 +2030,7 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
                 self._add_load_more_indicator()
                 
                 # 恢復滾動位置（延遲執行確保UI更新完成）
-                Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.1)
+                Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.05)
                 
                 logger.debug(f"三星彩重複三碼載入第{self.current_page}頁: 顯示 {start_index+1}-{end_index} 筆")
                 
@@ -2066,15 +2080,13 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
                 # 計算新的相對滾動位置
                 max_scroll = max(0, new_content_height - viewport_height)
                 if max_scroll > 0:
-                    # 保持相同的絕對位置，但稍微向上調整以保持視覺連續性
-                    adjusted_absolute_scroll = max(0, target_absolute_scroll - 50)  # 向上調整50像素
-                    new_scroll_y = 1 - (adjusted_absolute_scroll / max_scroll)
+                    # 準確定位，不加任何偏移以確保無縫滑動
+                    new_scroll_y = 1 - (target_absolute_scroll / max_scroll)
                     new_scroll_y = max(0, min(1, new_scroll_y))  # 確保在有效範圍內
+                    scroll_view.scroll_y = new_scroll_y
+                    logger.debug(f"三星彩重複三碼載入後滾動位置: {new_scroll_y:.3f}, 內容高度: {new_content_height:.0f}px")
                 else:
-                    new_scroll_y = 1  # 內容不夠長，保持在頂部
-                
-                scroll_view.scroll_y = new_scroll_y
-                logger.debug(f"三星彩重複三碼載入後滾動位置: {new_scroll_y:.3f}, 內容高度: {new_content_height:.0f}px")
+                    scroll_view.scroll_y = 1
                 
         except Exception as e:
             logger.exception(f"三星彩重複三碼載入下一頁錯誤: {str(e)}")
@@ -2338,6 +2350,7 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
             
             # 如果沒有結果，顯示提示
             if not self.displayed_results:
+                self.ids.results_layout.height = dp(100)
                 no_data_label = Label(
                     text='沒有重複的三碼組合',
                     font_name='ChineseFont',
@@ -2350,6 +2363,11 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
                 )
                 self.ids.results_layout.add_widget(no_data_label)
                 return
+
+            # 開始前設定最終的 height，防止分批新增 widget 時每次都觸發重新測量尺寸的卡頓
+            num_items = len(self.displayed_results)
+            calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
+            self.ids.results_layout.height = calculated_height
 
             # 分批次添加UI組件，每批10個
             batch_size = 10
