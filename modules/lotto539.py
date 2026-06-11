@@ -1149,6 +1149,21 @@ class Lotto539SavedScreen(BaseLotterySavedScreen):
 class Lotto539WinningDetailsScreen(Screen):
     """今彩539自選號中獎詳情界面"""
     sort_order = StringProperty('DESC')
+    
+    def on_touch_down(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_down(touch)
+
+    def on_touch_move(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_move(touch)
+
+    def on_touch_up(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_up(touch)
     user_numbers = DictProperty({})
     
     # 分頁相關屬性
@@ -2584,6 +2599,21 @@ class Lotto539DuplicateScreen(Screen):
 class Lotto539DuplicateDetailScreen(Screen):
     """重複五碼詳細信息界面"""
     details = ListProperty([])
+    
+    def on_touch_down(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_down(touch)
+
+    def on_touch_move(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_move(touch)
+
+    def on_touch_up(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_up(touch)
     
     # 分頁相關屬性
     all_details = ListProperty([])  # 完整查詢結果

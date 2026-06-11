@@ -457,6 +457,21 @@ class LotteryImageButton(ButtonBehavior, Image):
 class BaseLotteryQueryScreen(Screen):
     """基礎彩種查詢界面 - 包含共用的查詢、儲存、載入邏輯"""
     
+    def on_touch_down(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_down(touch)
+
+    def on_touch_move(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_move(touch)
+
+    def on_touch_up(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_up(touch)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.db_manager = DatabaseManager()
@@ -622,6 +637,21 @@ class BaseLotterySavedScreen(Screen):
     """基礎自選號管理界面 - 支援分頁顯示"""
     saved_numbers = ListProperty([])
     
+    def on_touch_down(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_down(touch)
+
+    def on_touch_move(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_move(touch)
+
+    def on_touch_up(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_up(touch)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.db_manager = DatabaseManager()
@@ -1073,6 +1103,21 @@ class LotteryTypeScreen(Screen):
     """主菜單界面"""
     btn_states = DictProperty({'power':1, 'big':1, '539':1, '3star':1, '4star':1})
     
+    def on_touch_down(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_down(touch)
+
+    def on_touch_move(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_move(touch)
+
+    def on_touch_up(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_up(touch)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         Clock.schedule_once(self._init_buttons, 0.5)
@@ -1655,6 +1700,21 @@ class BaseAdvancedResultScreen(Screen, BasePaginationMixin, BaseScrollMixin,
                               BaseSortMixin, BaseErrorHandlingMixin, BaseDatabaseMixin):
     """統合所有功能的基類"""
     
+    def on_touch_down(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_down(touch)
+
+    def on_touch_move(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_move(touch)
+
+    def on_touch_up(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_up(touch)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # 初始化資料庫路徑

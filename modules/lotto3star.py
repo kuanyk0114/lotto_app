@@ -1458,6 +1458,21 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
     """三星彩重複三碼查詢"""
     duplicates = ListProperty([])
     
+    def on_touch_down(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_down(touch)
+
+    def on_touch_move(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_move(touch)
+
+    def on_touch_up(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_up(touch)
+    
     # 分頁相關屬性
     all_results = ListProperty([])  # 完整查詢結果
     displayed_results = ListProperty([])  # 當前顯示的結果
@@ -2424,6 +2439,21 @@ class Lotto3StarDuplicateDetailScreen(Screen):
     """三星彩重複記錄詳情"""
     details = ListProperty([])
     
+    def on_touch_down(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_down(touch)
+
+    def on_touch_move(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_move(touch)
+
+    def on_touch_up(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_up(touch)
+    
     # 分頁相關屬性
     all_results = ListProperty([])  # 完整查詢結果
     displayed_results = ListProperty([])  # 當前顯示的結果
@@ -2935,6 +2965,21 @@ class Lotto3StarDuplicateDetailScreen(Screen):
 class Lotto3StarWinningDetailsScreen(Screen):
     """三星彩自選號中獎詳情"""
     sort_order = StringProperty('DESC')
+    
+    def on_touch_down(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_down(touch)
+
+    def on_touch_move(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_move(touch)
+
+    def on_touch_up(self, touch):
+        if self.manager and self.manager.current != self.name:
+            return False
+        return super().on_touch_up(touch)
     user_numbers = DictProperty({})
     
     # 分頁相關屬性
