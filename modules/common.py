@@ -1349,6 +1349,17 @@ class BaseScrollMixin:
     # 滾動相關屬性
     is_scrolling = BooleanProperty(False)
     _scroll_events_disabled = BooleanProperty(False)
+
+    def on_leave(self):
+        """離開屏幕時的清理，釋放背景定時器"""
+        if hasattr(self, '_inertia_timer') and self._inertia_timer:
+            Clock.unschedule(self._inertia_timer)
+            self._inertia_timer = None
+        self.is_scrolling = False
+        self._scroll_events_disabled = False
+        logger.debug(f"{self.__class__.__name__} 離開頁面，清理滾動狀態與定時器 (BaseScrollMixin)")
+        if hasattr(super(), 'on_leave'):
+            super().on_leave()
     
     def on_scroll_start(self, scroll_view, touch):
         """滾動開始時記錄觸摸信息"""
@@ -1489,7 +1500,7 @@ class BaseScrollMixin:
             return
         
         # 檢查是否接近底部（在到達底部前就開始載入）
-        content_layout = getattr(self.ids, 'results_layout', None) or getattr(self.ids, 'duplicate_list', None)
+        content_layout = getattr(self.ids, 'results_layout', None) or getattr(self.ids, 'duplicate_list', None) or getattr(self.ids, 'detail_list', None)
         if content_layout:
             content_height = content_layout.height
             viewport_height = scroll_view.height
@@ -1508,7 +1519,7 @@ class BaseScrollMixin:
             return
         
         # 檢查是否接近底部（在到達底部前就開始載入）
-        content_layout = getattr(self.ids, 'results_layout', None) or getattr(self.ids, 'duplicate_list', None)
+        content_layout = getattr(self.ids, 'results_layout', None) or getattr(self.ids, 'duplicate_list', None) or getattr(self.ids, 'detail_list', None)
         if content_layout:
             content_height = content_layout.height
             viewport_height = scroll_view.height
@@ -1537,6 +1548,71 @@ class BaseScrollMixin:
         """確保排序功能處於可用狀態"""
         self.is_scrolling = False
         logger.debug(f"{self.__class__.__name__} 確保排序功能可用")
+
+    def _restore_scroll_position_absolute(self, target_absolute_scroll):
+        """恢復到指定的絕對滾動位置"""
+        try:
+            if hasattr(self.ids, 'scroll_view'):
+                scroll_view = self.ids.scroll_view
+                content_layout = getattr(self.ids, 'results_layout', None) or getattr(self.ids, 'duplicate_list', None) or getattr(self.ids, 'detail_list', None)
+                if content_layout:
+                    content_height = content_layout.height
+                    viewport_height = scroll_view.height
+                    if content_height > viewport_height:
+                        max_scroll_distance = content_height - viewport_height
+                        new_scroll_y = 1 - (target_absolute_scroll / max_scroll_distance)
+                        new_scroll_y = max(0, min(1, new_scroll_y))
+                        scroll_view.scroll_y = new_scroll_y
+                    else:
+                        scroll_view.scroll_y = 1
+        except Exception as e:
+            logger.exception(f"{self.__class__.__name__} 恢復滾動位置錯誤: {str(e)}")
+
+    def _reset_scroll_to_top(self):
+        """重置滾動位置到頂部"""
+        try:
+            if hasattr(self.ids, 'scroll_view'):
+                # 先停止任何正在進行的滾動
+                self._stop_scrolling()
+                # 使用多次延遲確保UI完全更新後執行
+                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.2)
+                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.4)
+                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.6)
+                logger.debug(f"{self.__class__.__name__} 滾動位置已重置到頂部")
+        except Exception as e:
+            logger.exception(f"{self.__class__.__name__} 重置滾動位置錯誤: {str(e)}")
+
+    def _stop_scrolling(self):
+        """停止當前的滾動動作"""
+        try:
+            if hasattr(self.ids, 'scroll_view'):
+                scroll_view = self.ids.scroll_view
+                # 取消任何正在進行的動畫
+                Animation.cancel_all(scroll_view)
+                # 立即設定位置
+                scroll_view.scroll_y = 1
+                logger.debug(f"{self.__class__.__name__} 停止滾動動作並立即重置")
+        except Exception as e:
+            logger.exception(f"{self.__class__.__name__} 停止滾動錯誤: {str(e)}")
+
+    def _force_scroll_to_top(self):
+        """強制滾動到頂部"""
+        try:
+            if hasattr(self.ids, 'scroll_view'):
+                scroll_view = self.ids.scroll_view
+                # 停止任何動畫
+                Animation.cancel_all(scroll_view)
+                
+                # 使用Animation強制滾動到頂部
+                anim = Animation(scroll_y=1, duration=0.1)
+                anim.start(scroll_view)
+                
+                # 同時直接設定位置
+                scroll_view.scroll_y = 1
+                
+                logger.debug(f"{self.__class__.__name__} 強制滾動位置: {scroll_view.scroll_y}")
+        except Exception as e:
+            logger.exception(f"{self.__class__.__name__} 強制滾動錯誤: {str(e)}")
 
 
 class BaseSortMixin:
@@ -1749,51 +1825,7 @@ class BaseAdvancedResultScreen(Screen, BasePaginationMixin, BaseScrollMixin,
         # 重置滾動位置到頂部
         self._reset_scroll_to_top()
     
-    def _reset_scroll_to_top(self):
-        """重置滾動位置到頂部"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                # 先停止任何正在進行的滾動
-                self._stop_scrolling()
-                # 使用多次延遲確保UI完全更新後執行
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.2)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.4)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.6)
-                logger.debug(f"{self.__class__.__name__} 滾動位置已重置到頂部")
-        except Exception as e:
-            logger.exception(f"{self.__class__.__name__} 重置滾動位置錯誤: {str(e)}")
-    
-    def _stop_scrolling(self):
-        """停止當前的滾動動作"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 取消任何正在進行的動畫
-                Animation.cancel_all(scroll_view)
-                # 立即設定位置
-                scroll_view.scroll_y = 1
-                logger.debug(f"{self.__class__.__name__} 停止滾動動作並立即重置")
-        except Exception as e:
-            logger.exception(f"{self.__class__.__name__} 停止滾動錯誤: {str(e)}")
-    
-    def _force_scroll_to_top(self):
-        """強制滾動到頂部"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 停止任何動畫
-                Animation.cancel_all(scroll_view)
-                
-                # 使用Animation強制滾動到頂部
-                anim = Animation(scroll_y=1, duration=0.1)
-                anim.start(scroll_view)
-                
-                # 同時直接設定位置
-                scroll_view.scroll_y = 1
-                
-                logger.debug(f"{self.__class__.__name__} 強制滾動位置: {scroll_view.scroll_y}")
-        except Exception as e:
-            logger.exception(f"{self.__class__.__name__} 強制滾動錯誤: {str(e)}")
+
 
 
 class AdBannerArea(BoxLayout):

@@ -396,222 +396,6 @@ class BigLottoResultsScreen(BaseAdvancedResultScreen):
         if hasattr(self, 'load_more_indicator') and self.load_more_indicator in self.ids.results_layout.children:
             self.ids.results_layout.remove_widget(self.load_more_indicator)
     
-    def on_scroll_start(self, scroll_view, touch):
-        """滾動開始時記錄觸摸信息"""
-        logger.debug(f"大樂透 on_scroll_start 被調用")
-        Clock.unschedule(self._check_inertia_scroll)
-        
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            logger.debug("大樂透滾動事件被禁用，忽略滾動開始")
-            return
-        
-        # 記錄觸摸開始位置和時間
-        self._touch_start_pos = touch.pos
-        self._touch_start_time = touch.time_start
-        logger.debug(f"大樂透觸摸開始: 位置{touch.pos}, 時間{touch.time_start}")
-    
-    def on_scroll_move(self, scroll_view, touch):
-        """滾動移動時檢查是否為真正的滑動"""
-        logger.debug(f"大樂透 on_scroll_move 被調用")
-        
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            logger.debug("大樂透滾動移動事件被禁用")
-            return
-        
-        # 檢查是否有觸摸開始記錄
-        if not hasattr(self, '_touch_start_pos') or not hasattr(self, '_touch_start_time'):
-            return
-        
-        # 計算移動距離
-        if self._touch_start_pos:
-            dx = abs(touch.pos[0] - self._touch_start_pos[0])
-            dy = abs(touch.pos[1] - self._touch_start_pos[1])
-            distance = (dx * dx + dy * dy) ** 0.5
-            
-            # 提高閾值並避免重複設定
-            if distance > 30 and not self.is_scrolling:  # 提高到30像素
-                Clock.schedule_once(lambda dt: self._set_scrolling_state(True), 0.1)
-                logger.debug(f"大樂透檢測到滑動，移動距離: {distance:.1f}px")
-    
-    def on_scroll_end(self, scroll_view, touch):
-        """滾動結束時檢查是否需要載入更多並重新啟用排序按鈕"""
-        logger.debug(f"大樂透 on_scroll_end 被調用")
-        
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            logger.debug("大樂透滾動事件被禁用，忽略滾動結束")
-            return
-        
-        # 計算總移動距離和時間
-        if hasattr(self, '_touch_start_pos') and hasattr(self, '_touch_start_time'):
-            if self._touch_start_pos:
-                dx = abs(touch.pos[0] - self._touch_start_pos[0])
-                dy = abs(touch.pos[1] - self._touch_start_pos[1])
-                distance = (dx * dx + dy * dy) ** 0.5
-                duration = touch.time_start - self._touch_start_time
-                
-                logger.debug(f"大樂透觸摸結束: 移動距離{distance:.1f}px, 持續時間{duration:.2f}s")
-                
-                # 如果有滑動，需要等待慣性滾動結束
-                if distance > 30:
-                    # 開始監控慣性滾動
-                    self._start_inertia_monitoring(scroll_view)
-                    logger.debug("大樂透開始監控慣性滾動")
-        
-        # 清除觸摸記錄
-        self._touch_start_pos = None
-        self._touch_start_time = None
-        
-        # 立即檢查是否需要載入更多（不等慣性滾動結束）
-        self._check_load_more_immediate(scroll_view)
-    
-    def _start_inertia_monitoring(self, scroll_view):
-        """開始監控慣性滾動"""
-        Clock.unschedule(self._check_inertia_scroll)
-        # 記錄當前滾動位置
-        self._last_scroll_y = scroll_view.scroll_y
-        self._inertia_check_count = 0
-        
-        # 每0.1秒檢查一次滾動位置
-        Clock.schedule_interval(self._check_inertia_scroll, 0.1)
-    
-    def _check_inertia_scroll(self, dt):
-        """檢查慣性滾動是否結束"""
-        if not hasattr(self.ids, 'scroll_view'):
-            return False
-        
-        scroll_view = self.ids.scroll_view
-        current_scroll_y = scroll_view.scroll_y
-        
-        # 計算滾動位置變化
-        scroll_change = abs(current_scroll_y - self._last_scroll_y)
-        self._inertia_check_count += 1
-        
-        logger.debug(f"大樂透慣性檢查 {self._inertia_check_count}: 位置變化 {scroll_change:.4f}")
-        
-        # 如果滾動位置變化很小，認為慣性滾動結束
-        if scroll_change < 0.001:  # 位置變化小於0.001
-            logger.debug("大樂透慣性滾動結束，啟用排序功能")
-            Clock.schedule_once(lambda dt: self._set_scrolling_state(False), 0.1)
-            
-            # 檢查是否需要載入更多
-            self._check_load_more(scroll_view)
-            
-            return False  # 停止定時檢查
-        
-        # 更新上次位置
-        self._last_scroll_y = current_scroll_y
-        
-        # 最多檢查30次（3秒），避免無限檢查
-        if self._inertia_check_count >= 30:
-            logger.warning("大樂透慣性檢查超時，強制啟用排序功能")
-            Clock.schedule_once(lambda dt: self._set_scrolling_state(False), 0.1)
-            return False
-        
-        return True  # 繼續檢查
-    
-    def _check_load_more_immediate(self, scroll_view):
-        """立即檢查是否需要載入更多資料（不等慣性滾動結束）"""
-        if not self.has_more_data or self.is_loading_more:
-            return
-        
-        # 檢查是否接近底部（在到達底部前就開始載入）
-        content_height = self.ids.results_layout.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        # 當剩餘內容少於1.5個螢幕高度時開始載入
-        if remaining_content <= viewport_height * 1.5:
-            logger.debug(f"大樂透立即檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
-            self._load_next_page()
-    
-    def _check_load_more(self, scroll_view):
-        """檢查是否需要載入更多資料（慣性滾動結束後的補充檢查）"""
-        if not self.has_more_data or self.is_loading_more:
-            return
-        
-        # 檢查是否接近底部（在到達底部前就開始載入）
-        content_height = self.ids.results_layout.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        # 當剩餘內容少於1.5個螢幕高度時開始載入
-        if remaining_content <= viewport_height * 1.5:
-            logger.debug(f"大樂透慣性滾動結束後檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
-            self._load_next_page()
-    
-    def _set_scrolling_state(self, is_scrolling):
-        """設定滾動狀態並更新按鈕"""
-        self.is_scrolling = is_scrolling
-        if hasattr(self.ids, 'sort_btn'):
-            self.ids.sort_btn.disabled = is_scrolling
-        logger.debug(f"大樂透結果頁面設定滾動狀態: {is_scrolling}, 按鈕禁用: {is_scrolling}")
-    
-    def _start_inertia_monitoring(self, scroll_view):
-        """開始監控慣性滾動"""
-        Clock.unschedule(self._check_inertia_scroll)
-        # 記錄當前滾動位置
-        self._last_scroll_y = scroll_view.scroll_y
-        self._inertia_check_count = 0
-        
-        # 每0.1秒檢查一次滾動位置
-        Clock.schedule_interval(self._check_inertia_scroll, 0.1)
-    
-    def _check_inertia_scroll(self, dt):
-        """檢查慣性滾動是否結束"""
-        if not hasattr(self.ids, 'scroll_view'):
-            return False
-        
-        scroll_view = self.ids.scroll_view
-        current_scroll_y = scroll_view.scroll_y
-        
-        # 計算滾動位置變化
-        scroll_change = abs(current_scroll_y - self._last_scroll_y)
-        self._inertia_check_count += 1
-        
-        logger.debug(f"大樂透結果頁面慣性檢查 {self._inertia_check_count}: 位置變化 {scroll_change:.4f}")
-        
-        # 如果滾動位置變化很小，認為慣性滾動結束
-        if scroll_change < 0.001:  # 位置變化小於0.001
-            logger.debug("大樂透結果頁面慣性滾動結束，啟用排序功能")
-            Clock.schedule_once(lambda dt: self._set_scrolling_state(False), 0.1)
-            
-            # 檢查是否需要載入更多
-            self._check_load_more(scroll_view)
-            
-            return False  # 停止定時檢查
-        
-        # 更新上次位置
-        self._last_scroll_y = current_scroll_y
-        
-        # 最多檢查30次（3秒），避免無限檢查
-        if self._inertia_check_count >= 30:
-            logger.warning("大樂透結果頁面慣性檢查超時，強制啟用排序功能")
-            Clock.schedule_once(lambda dt: self._set_scrolling_state(False), 0.1)
-            return False
-        
-        return True  # 繼續檢查
-    
-    def _check_load_more(self, scroll_view):
-        """檢查是否需要載入更多資料（慣性滾動結束後的補充檢查）"""
-        if not self.has_more_data or self.is_loading_more:
-            return
-        
-        # 檢查是否接近底部（在到達底部前就開始載入）
-        content_height = self.ids.results_layout.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        # 當剩餘內容少於1.5個螢幕高度時開始載入
-        if remaining_content <= viewport_height * 1.5:
-            logger.info(f"大樂透立即檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
-            self._load_next_page()
-    
     def toggle_sort_order(self):
         """切換排序方式（檢查是否在滾動中）"""
         logger.debug(f"大樂透排序按鈕被點擊，滾動狀態: {self.is_scrolling}")
@@ -935,7 +719,7 @@ class BigLottoRepeatedNumbersScreen(BaseAdvancedResultScreen):
         self.enable_sort = False
     
     def _update_result_list(self):
-        """更新結果列表顯示 - 實現基類抽象方法"""
+        """更新結果列表顯示 - 實現基類抽象方法，採分批次渲染"""
         try:
             # 清空結果列表
             self.ids.duplicate_list.clear_widgets()
@@ -964,29 +748,51 @@ class BigLottoRepeatedNumbersScreen(BaseAdvancedResultScreen):
             calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
             self.ids.duplicate_list.height = calculated_height
 
-            # 顯示當前頁的結果
-            for item in self.displayed_results:
-                item_widget = self._create_duplicate_item(item)
-                self.ids.duplicate_list.add_widget(item_widget)
-                
-                # 添加分隔線（除了最後一個項目）
-                if item != self.displayed_results[-1]:
-                    separator = BoxLayout(size_hint_y=None, height=dp(1))
-                    with separator.canvas:
-                        Color(rgba=get_color_from_hex('#888888'))
-                        Rectangle(pos=separator.pos, size=separator.size)
-                    self.ids.duplicate_list.add_widget(separator)
+            # 分批次添加UI組件，每批10個
+            batch_size = 10
+            total_items = len(self.displayed_results)
             
-            # 添加載入更多指示器
-            self._add_load_more_indicator()
+            def add_batch(start_index):
+                # 確保在非活躍狀態時不繼續添加
+                if self.manager.current != self.name:
+                    return
+                end_index = min(start_index + batch_size, total_items)
+                
+                for i in range(start_index, end_index):
+                    item = self.displayed_results[i]
+                    item_widget = self._create_duplicate_item(item)
+                    self.ids.duplicate_list.add_widget(item_widget)
+                    
+                    # 添加分隔線（除了最後一個項目）
+                    if i < total_items - 1:
+                        separator = BoxLayout(size_hint_y=None, height=dp(1))
+                        with separator.canvas:
+                            Color(rgba=get_color_from_hex('#888888'))
+                            Rectangle(pos=separator.pos, size=separator.size)
+                        self.ids.duplicate_list.add_widget(separator)
+                
+                # 如果還有更多項目，繼續下一批
+                if end_index < total_items:
+                    Clock.schedule_once(lambda dt: add_batch(end_index), 0.02)
+                else:
+                    # 所有項目添加完成，添加載入指示器
+                    self._add_load_more_indicator()
+                    logger.debug(f"大樂透重複六碼分批更新完成: 共{total_items}筆")
+            
+            # 開始第一批
+            add_batch(0)
             
         except Exception as e:
             logger.exception(f"大樂透重複六碼更新列表錯誤: {str(e)}")
             traceback.print_exc()
     
     def _append_to_result_list(self, new_records):
-        """追加新記錄到結果列表 - 實現基類抽象方法"""
+        """追加新記錄到結果列表 - 實現基類抽象方法，採分批次渲染"""
         try:
+            # 確保在非活躍狀態時不繼續添加
+            if self.manager.current != self.name:
+                return
+                
             # 保存當前滾動位置
             scroll_view = self.ids.scroll_view
             content_height_before = self.ids.duplicate_list.height
@@ -996,28 +802,45 @@ class BigLottoRepeatedNumbersScreen(BaseAdvancedResultScreen):
             # 移除舊的載入指示器
             self._remove_load_more_indicator()
             
-            # 添加新記錄
-            for item in new_records:
-                item_widget = self._create_duplicate_item(item)
-                self.ids.duplicate_list.add_widget(item_widget)
-                
-                # 添加分隔線（除了最後一個項目）
-                if item != new_records[-1] or len(self.displayed_results) < len(self.all_results):
-                    separator = BoxLayout(size_hint_y=None, height=dp(1))
-                    with separator.canvas:
-                        Color(rgba=get_color_from_hex('#888888'))
-                        Rectangle(pos=separator.pos, size=separator.size)
-                    self.ids.duplicate_list.add_widget(separator)
-            
             # 預先計算並設定 layout 的高度以防止動態尺寸重新繪製造成的卡頓
             num_items = len(self.displayed_results)
             calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
             self.ids.duplicate_list.height = calculated_height
 
-            # 重新添加載入指示器
-            self._add_load_more_indicator()
+            # 分批次追加，每批10個項目
+            batch_size = 10
+            total_appends = len(new_records)
             
-            # 恢復滾動位置
+            def append_batch(start_idx):
+                # 確保在非活躍狀態時不繼續添加
+                if self.manager.current != self.name:
+                    return
+                end_idx = min(start_idx + batch_size, total_appends)
+                
+                for idx in range(start_idx, end_idx):
+                    item = new_records[idx]
+                    item_widget = self._create_duplicate_item(item)
+                    self.ids.duplicate_list.add_widget(item_widget)
+                    
+                    # 添加分隔線（除了最後一個項目）
+                    if item != new_records[-1] or len(self.displayed_results) < len(self.all_results):
+                        separator = BoxLayout(size_hint_y=None, height=dp(1))
+                        with separator.canvas:
+                            Color(rgba=get_color_from_hex('#888888'))
+                            Rectangle(pos=separator.pos, size=separator.size)
+                        self.ids.duplicate_list.add_widget(separator)
+                        
+                if end_idx < total_appends:
+                    Clock.schedule_once(lambda dt: append_batch(end_idx), 0.02)
+                else:
+                    # 所有資料追加完成，重新添加載入指示器
+                    self._add_load_more_indicator()
+                    logger.debug(f"大樂透重複六碼追加記錄完成，共追加 {total_appends} 筆")
+            
+            # 開始第一批追加
+            append_batch(0)
+            
+            # 恢復滾動位置 (由於已經預設了 calculated_height，故可以提前安全恢復)
             Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.05)
             
         except Exception as e:
@@ -1025,7 +848,8 @@ class BigLottoRepeatedNumbersScreen(BaseAdvancedResultScreen):
             traceback.print_exc()
 
     def on_pre_enter(self):
-        # 確保滾動狀態正確初始化
+        # 呼叫基類方法以清理任何背景滾動與定時器
+        super().on_pre_enter()
         self.is_scrolling = False
         self._scroll_events_disabled = False
         logger.debug(f"大樂透重複六碼頁面進入，初始化滾動狀態: {self.is_scrolling}")
@@ -2063,158 +1887,6 @@ class BigLottoWinningDetailsScreen(BaseAdvancedResultScreen):
                 logger.debug(f"大樂透強制滾動位置: {scroll_view.scroll_y}")
         except Exception as e:
             logger.exception(f"大樂透強制滾動錯誤: {str(e)}")
-
-    def on_scroll_start(self, scroll_view, touch):
-        """滾動開始時禁用排序按鈕"""
-        Clock.unschedule(self._check_inertia_scroll)
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            logger.debug("大樂透滾動事件被禁用，忽略滾動開始")
-            return
-        
-        # 記錄觸摸開始位置和時間
-        self._touch_start_pos = touch.pos
-        self._touch_start_time = touch.time_start
-        logger.debug(f"大樂透觸摸開始: 位置{touch.pos}, 時間{touch.time_start}")
-
-    def on_scroll_move(self, scroll_view, touch):
-        """滾動移動時檢查是否為真正的滑動"""
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            return
-        
-        # 檢查是否有觸摸開始記錄
-        if not hasattr(self, '_touch_start_pos') or not hasattr(self, '_touch_start_time'):
-            return
-        
-        # 計算移動距離
-        if self._touch_start_pos:
-            dx = abs(touch.pos[0] - self._touch_start_pos[0])
-            dy = abs(touch.pos[1] - self._touch_start_pos[1])
-            distance = (dx * dx + dy * dy) ** 0.5
-            
-            # 只有移動距離超過閾值才認為是滑動
-            if distance > 20:  # 20像素的移動閾值
-                if not self.is_scrolling:
-                    Clock.schedule_once(lambda dt: self._set_scrolling_state(True), 0.1)
-                    logger.debug(f"大樂透檢測到滑動，移動距離: {distance:.1f}px")
-
-    def on_scroll_end(self, scroll_view, touch):
-        """滾動結束時檢查是否需要載入更多並重新啟用排序按鈕"""
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            logger.debug("大樂透滾動事件被禁用，忽略滾動結束")
-            return
-        
-        # 計算總移動距離和時間
-        if hasattr(self, '_touch_start_pos') and hasattr(self, '_touch_start_time'):
-            if self._touch_start_pos:
-                dx = abs(touch.pos[0] - self._touch_start_pos[0])
-                dy = abs(touch.pos[1] - self._touch_start_pos[1])
-                distance = (dx * dx + dy * dy) ** 0.5
-                duration = touch.time_start - self._touch_start_time
-                
-                logger.debug(f"大樂透觸摸結束: 移動距離{distance:.1f}px, 持續時間{duration:.2f}s")
-                
-                # 如果有滑動，需要等待慣性滾動結束
-                if distance > 20:
-                    # 開始監控慣性滾動
-                    self._start_inertia_monitoring(scroll_view)
-                    logger.debug("大樂透開始監控慣性滾動")
-        
-        # 清除觸摸記錄
-        self._touch_start_pos = None
-        self._touch_start_time = None
-        
-        # 立即檢查是否需要載入更多（不等慣性滾動結束）
-        self._check_load_more_immediate(scroll_view)
-
-    def _start_inertia_monitoring(self, scroll_view):
-        """開始監控慣性滾動"""
-        Clock.unschedule(self._check_inertia_scroll)
-        # 記錄當前滾動位置
-        self._last_scroll_y = scroll_view.scroll_y
-        self._inertia_check_count = 0
-        
-        # 每0.1秒檢查一次滾動位置
-        Clock.schedule_interval(self._check_inertia_scroll, 0.1)
-
-    def _check_inertia_scroll(self, dt):
-        """檢查慣性滾動是否結束"""
-        if not hasattr(self.ids, 'scroll_view'):
-            return False
-        
-        scroll_view = self.ids.scroll_view
-        current_scroll_y = scroll_view.scroll_y
-        
-        # 計算滾動位置變化
-        scroll_change = abs(current_scroll_y - self._last_scroll_y)
-        self._inertia_check_count += 1
-        
-        logger.debug(f"大樂透慣性檢查 {self._inertia_check_count}: 位置變化 {scroll_change:.4f}")
-        
-        # 如果滾動位置變化很小，認為慣性滾動結束
-        if scroll_change < 0.001:  # 位置變化小於0.001
-            logger.debug("大樂透慣性滾動結束，啟用排序按鈕")
-            Clock.schedule_once(lambda dt: self._set_scrolling_state(False), 0.1)
-            
-            # 檢查是否需要載入更多
-            self._check_load_more(scroll_view)
-            
-            return False  # 停止定時檢查
-        
-        # 更新上次位置
-        self._last_scroll_y = current_scroll_y
-        
-        # 最多檢查30次（3秒），避免無限檢查
-        if self._inertia_check_count >= 30:
-            logger.warning("大樂透慣性檢查超時，強制啟用排序按鈕")
-            Clock.schedule_once(lambda dt: self._set_scrolling_state(False), 0.1)
-            return False
-        
-        return True  # 繼續檢查
-
-    def _check_load_more_immediate(self, scroll_view):
-        """立即檢查是否需要載入更多資料（不等慣性滾動結束）"""
-        if not self.has_more_data or self.is_loading_more:
-            return
-        
-        # 檢查是否接近底部（在到達底部前就開始載入）
-        if hasattr(self.ids, 'results_layout'):
-            content_height = self.ids.results_layout.height
-            viewport_height = scroll_view.height
-            current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-            remaining_content = content_height - current_scroll_pos - viewport_height
-            
-            # 當剩餘內容少於1.5個螢幕高度時開始載入
-            if remaining_content <= viewport_height * 1.5:
-                logger.debug(f"大樂透立即檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
-                self._load_next_page()
-
-    def _check_load_more(self, scroll_view):
-        """檢查是否需要載入更多資料（慣性滾動結束後的補充檢查）"""
-        if not self.has_more_data or self.is_loading_more:
-            return
-        
-        # 檢查是否接近底部（在到達底部前就開始載入）
-        if hasattr(self.ids, 'results_layout'):
-            content_height = self.ids.results_layout.height
-            viewport_height = scroll_view.height
-            current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-            remaining_content = content_height - current_scroll_pos - viewport_height
-            
-            # 當剩餘內容少於1.5個螢幕高度時開始載入
-            if remaining_content <= viewport_height * 1.5:
-                logger.debug(f"大樂透慣性滾動結束後檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
-                self._load_next_page()
-
-    def _set_scrolling_state(self, is_scrolling):
-        """設定滾動狀態並更新按鈕"""
-        self.is_scrolling = is_scrolling
-        if hasattr(self.ids, 'sort_btn'):
-            self.ids.sort_btn.disabled = is_scrolling
-            # 不改變按鈕文字，只改變禁用狀態
-        logger.debug(f"大樂透設定滾動狀態: {is_scrolling}, 按鈕禁用: {is_scrolling}")
 
     def show_results(self):
         """保留舊版本的show_results方法以保持向後相容"""

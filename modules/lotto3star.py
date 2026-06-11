@@ -13,7 +13,7 @@ from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
 from kivy.metrics import dp
-from .common import show_popup, BallButton, ResultBall, LoadingPopup, DatabaseManager, BaseLotteryQueryScreen, BaseLotterySavedScreen, BaseAdvancedResultScreen, ClickableBoxLayout
+from .common import show_popup, BallButton, ResultBall, LoadingPopup, DatabaseManager, BaseLotteryQueryScreen, BaseLotterySavedScreen, BaseAdvancedResultScreen, ClickableBoxLayout, BaseScrollMixin
 from kivy.utils import get_color_from_hex
 from kivy.app import App
 from kivy.graphics import Color, Rectangle, Ellipse
@@ -1123,168 +1123,6 @@ class Lotto3StarResultsScreen(BaseAdvancedResultScreen):
         except Exception as e:
             logger.exception(f"三星彩查詢結果強制滾動錯誤: {str(e)}")
 
-    def on_scroll_start(self, scroll_view, touch):
-        """滾動開始時的處理"""
-        Clock.unschedule(self._check_inertia_scroll)
-        logger.debug(f"三星彩查詢結果滾動開始事件觸發！scroll_y={scroll_view.scroll_y:.3f}")
-        
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            logger.debug("三星彩查詢結果滾動事件被禁用，忽略滾動開始")
-            return
-        
-        # 檢查觸摸是否在排序按鈕上
-        if hasattr(self.ids, 'sort_btn'):
-            btn = self.ids.sort_btn
-            if btn.collide_point(*touch.pos):
-                logger.debug("三星彩查詢結果觸摸在排序按鈕上，不禁用排序按鈕")
-                return
-        
-        # 記錄觸摸開始位置和時間
-        self._touch_start_pos = touch.pos
-        self._touch_start_time = touch.time_start
-        logger.debug(f"三星彩查詢結果記錄觸摸開始位置: {touch.pos}")
-
-    def on_scroll_move(self, scroll_view, touch):
-        """滾動移動時檢查是否為真正的滑動"""
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            return
-        
-        # 檢查是否有觸摸開始記錄
-        if not hasattr(self, '_touch_start_pos') or not hasattr(self, '_touch_start_time'):
-            return
-        
-        # 計算移動距離
-        if self._touch_start_pos:
-            dx = abs(touch.pos[0] - self._touch_start_pos[0])
-            dy = abs(touch.pos[1] - self._touch_start_pos[1])
-            distance = (dx * dx + dy * dy) ** 0.5
-            
-            # 只有移動距離超過閾值才認為是滑動
-            if distance > 20:  # 20像素的移動閾值
-                if not self.is_scrolling:
-                    # 立即設定滾動狀態並禁用排序按鈕
-                    self._set_scrolling_state(True)
-                    logger.debug(f"三星彩查詢結果檢測到滑動，移動距離: {distance:.1f}px，立即禁用排序按鈕")
-
-    def on_scroll_end(self, scroll_view, touch):
-        """滾動結束時檢查是否需要載入更多並重新啟用排序按鈕"""
-        logger.debug(f"三星彩查詢結果滾動結束事件觸發！")
-        
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            logger.debug("三星彩查詢結果滾動事件被禁用，忽略滾動結束")
-            return
-        
-        # 計算總移動距離和時間
-        if hasattr(self, '_touch_start_pos') and hasattr(self, '_touch_start_time'):
-            if self._touch_start_pos:
-                dx = abs(touch.pos[0] - self._touch_start_pos[0])
-                dy = abs(touch.pos[1] - self._touch_start_pos[1])
-                distance = (dx * dx + dy * dy) ** 0.5
-                duration = touch.time_start - self._touch_start_time
-                
-                logger.debug(f"三星彩查詢結果觸摸結束: 移動距離{distance:.1f}px, 持續時間{duration:.2f}s")
-                
-                # 如果有滑動，需要等待慣性滾動結束
-                if distance > 20:
-                    # 開始監控慣性滾動
-                    self._start_inertia_monitoring(scroll_view)
-                    logger.debug("三星彩查詢結果開始監控慣性滾動")
-                else:
-                    # 沒有明顯滑動，立即重新啟用排序按鈕
-                    self._set_scrolling_state(False)
-                    logger.debug("三星彩查詢結果沒有明顯滑動，立即啟用排序按鈕")
-        else:
-            # 沒有觸摸記錄，也要重新啟用排序按鈕
-            self._set_scrolling_state(False)
-            logger.debug("三星彩查詢結果沒有觸摸記錄，立即啟用排序按鈕")
-        
-        # 清除觸摸記錄
-        self._touch_start_pos = None
-        self._touch_start_time = None
-        
-        # 立即檢查是否需要載入更多（不等慣性滾動結束）
-        self._check_load_more_immediate(scroll_view)
-
-    def _start_inertia_monitoring(self, scroll_view):
-        """開始監控慣性滾動"""
-        Clock.unschedule(self._check_inertia_scroll)
-        # 記錄當前滾動位置
-        self._last_scroll_y = scroll_view.scroll_y
-        self._inertia_check_count = 0
-        
-        # 每0.1秒檢查一次滾動位置
-        Clock.schedule_interval(self._check_inertia_scroll, 0.1)
-
-    def _check_inertia_scroll(self, dt):
-        """檢查慣性滾動是否結束"""
-        if not hasattr(self.ids, 'scroll_view'):
-            return False
-        
-        scroll_view = self.ids.scroll_view
-        current_scroll_y = scroll_view.scroll_y
-        
-        # 計算滾動位置變化
-        scroll_change = abs(current_scroll_y - self._last_scroll_y)
-        self._inertia_check_count += 1
-        
-        logger.debug(f"三星彩查詢結果慣性檢查 {self._inertia_check_count}: 位置變化 {scroll_change:.4f}")
-        
-        # 如果滾動位置變化很小，認為慣性滾動結束
-        if scroll_change < 0.001:  # 位置變化小於0.001
-            logger.debug("三星彩查詢結果慣性滾動結束，啟用排序按鈕")
-            Clock.schedule_once(lambda dt: self._set_scrolling_state(False), 0.1)
-            
-            # 檢查是否需要載入更多
-            self._check_load_more(scroll_view)
-            
-            return False  # 停止定時檢查
-        
-        # 更新上次位置
-        self._last_scroll_y = current_scroll_y
-        
-        # 最多檢查30次（3秒），避免無限檢查
-        if self._inertia_check_count >= 30:
-            logger.warning("三星彩查詢結果慣性檢查超時，強制啟用排序按鈕")
-            Clock.schedule_once(lambda dt: self._set_scrolling_state(False), 0.1)
-            return False
-        
-        return True  # 繼續檢查
-
-    def _check_load_more_immediate(self, scroll_view):
-        """立即檢查是否需要載入更多資料（不等慣性滾動結束）"""
-        if not self.has_more_data or self.is_loading_more:
-            return
-        
-        # 檢查是否接近底部（在到達底部前就開始載入）
-        content_height = self.ids.results_layout.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        # 當剩餘內容少於1.5個螢幕高度時開始載入
-        if remaining_content <= viewport_height * 1.5:
-            logger.debug(f"三星彩查詢結果立即檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
-            self._load_next_page()
-
-    def _check_load_more(self, scroll_view):
-        """檢查是否需要載入更多資料（慣性滾動結束後的補充檢查）"""
-        if not self.has_more_data or self.is_loading_more:
-            return
-        
-        # 檢查是否接近底部（在到達底部前就開始載入）
-        content_height = self.ids.results_layout.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        # 當剩餘內容少於1.5個螢幕高度時開始載入
-        if remaining_content <= viewport_height * 1.5:
-            logger.debug(f"三星彩查詢結果慣性滾動結束後檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
-            self._load_next_page()
-
     def _old_show_results(self, selected_numbers):
         """保留舊版本的show_results方法以保持向後相容"""
         self.ids.results_layout.clear_widgets()
@@ -1456,42 +1294,35 @@ class Lotto3StarResultsScreen(BaseAdvancedResultScreen):
 
 
 
-class Lotto3StarRepeatedNumbersScreen(Screen):
+class Lotto3StarRepeatedNumbersScreen(BaseAdvancedResultScreen):
     """三星彩重複三碼查詢"""
     duplicates = ListProperty([])
     
-    def on_touch_down(self, touch):
-        if self.manager and self.manager.current != self.name:
-            return False
-        return super().on_touch_down(touch)
-
-    def on_touch_move(self, touch):
-        if self.manager and self.manager.current != self.name:
-            return False
-        return super().on_touch_move(touch)
-
-    def on_touch_up(self, touch):
-        if self.manager and self.manager.current != self.name:
-            return False
-        return super().on_touch_up(touch)
-    
-    # 分頁相關屬性
-    all_results = ListProperty([])  # 完整查詢結果
-    displayed_results = ListProperty([])  # 當前顯示的結果
-    current_page = NumericProperty(0)     # 當前頁數
-    page_size = NumericProperty(30)       # 每頁顯示數量
-    is_loading_more = BooleanProperty(False)  # 是否正在載入更多
-    has_more_data = BooleanProperty(True)     # 是否還有更多資料
-    is_scrolling = BooleanProperty(False)     # 是否正在滾動
     repeated_numbers = ListProperty([])       # 重複的號碼
     
+    # 實現基類抽象屬性
+    @property
+    def table_name(self):
+        return 'lotto_3star'
+    
+    @property
+    def number_columns(self):
+        return ['num1', 'num2', 'num3']
+    
+    @property
+    def special_column(self):
+        return None
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.enable_sort = False
         self.db_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'lotto_history.db')
 
     def on_pre_enter(self):
         """進入頁面時的處理"""
+        super().on_pre_enter()
+        self.is_scrolling = False
+        self._scroll_events_disabled = False
         logger.debug("三星彩重複三碼頁面進入，開始查詢")
         
         # 顯示載入中彈窗
@@ -1806,13 +1637,11 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
             self._update_result_list()  # 顯示無資料
 
     def _update_result_list(self):
-        """更新結果列表（分頁版本）"""
+        """更新結果列表（分頁版本），採分批次渲染"""
         try:
-            # 清除結果列表
             if hasattr(self.ids, 'results_layout'):
                 self.ids.results_layout.clear_widgets()
             
-            # 如果沒有結果，顯示提示
             if not self.displayed_results:
                 if hasattr(self.ids, 'results_layout'):
                     self.ids.results_layout.height = dp(100)
@@ -1836,96 +1665,97 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
             if hasattr(self.ids, 'results_layout'):
                 self.ids.results_layout.height = calculated_height
 
-            # 顯示當前已載入的所有重複號碼項目
-            for i, item in enumerate(self.displayed_results):
-                # 創建重複號碼項目
-                item_widget = self._create_duplicate_item(item)
-                if hasattr(self.ids, 'results_layout'):
-                    self.ids.results_layout.add_widget(item_widget)
-                
-                # 添加分隔線（除了最後一個項目）
-                if i < len(self.displayed_results) - 1:
-                    separator = BoxLayout(size_hint_y=None, height=dp(1))
-                    with separator.canvas:
-                        Color(rgba=get_color_from_hex('#888888'))
-                        Rectangle(pos=separator.pos, size=separator.size)
-                    self.ids.results_layout.add_widget(separator)
+            # 分批次添加UI組件，每批10個
+            batch_size = 10
+            total_items = len(self.displayed_results)
             
-            # 添加載入更多指示器（無論是否還有更多資料）
-            self._add_load_more_indicator()
+            def add_batch(start_idx):
+                if self.manager.current != self.name:
+                    return
+                end_idx = min(start_idx + batch_size, total_items)
+                
+                for i in range(start_idx, end_idx):
+                    item = self.displayed_results[i]
+                    item_widget = self._create_duplicate_item(item)
+                    if hasattr(self.ids, 'results_layout'):
+                        self.ids.results_layout.add_widget(item_widget)
+                    
+                    if i < total_items - 1:
+                        separator = BoxLayout(size_hint_y=None, height=dp(1))
+                        with separator.canvas:
+                            Color(rgba=get_color_from_hex('#888888'))
+                            Rectangle(pos=separator.pos, size=separator.size)
+                        if hasattr(self.ids, 'results_layout'):
+                            self.ids.results_layout.add_widget(separator)
+                
+                if end_idx < total_items:
+                    Clock.schedule_once(lambda dt: add_batch(end_idx), 0.02)
+                else:
+                    self._add_load_more_indicator()
+                    logger.debug(f"三星彩重複三碼分批更新完成: 共{total_items}筆")
+            
+            add_batch(0)
 
         except Exception as e:
             traceback.print_exc()
             logger.exception(f"三星彩重複三碼結果列表更新錯誤: {str(e)}")
 
-    def _create_result_item(self, record, repeated_numbers):
-        """創建單個結果項目的UI組件"""
-        # 創建結果行容器
-        result_row = BoxLayout(
-            orientation='vertical',
-            size_hint_y=None,
-            height=dp(70),
-            spacing=dp(5)
-        )
+    def _append_to_result_list(self, new_records):
+        """追加新記錄到結果列表 - 採分批次渲染"""
+        try:
+            if self.manager.current != self.name:
+                return
+                
+            scroll_view = self.ids.scroll_view
+            content_height_before = self.ids.results_layout.height
+            viewport_height = scroll_view.height
+            current_absolute_scroll = (1 - scroll_view.scroll_y) * max(0, content_height_before - viewport_height)
+            
+            self._remove_load_more_indicator()
+            
+            num_items = len(self.displayed_results)
+            calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
+            if hasattr(self.ids, 'results_layout'):
+                self.ids.results_layout.height = calculated_height
 
-        # 期別和日期行
-        info_row = BoxLayout(
-            size_hint_y=None,
-            height=dp(20)
-        )
-        
-        period_label = Label(
-            text=f"期別: {record['期別']}",
-            font_name='ChineseFont',
-            font_size='12sp',
-            size_hint_x=None,
-            width=dp(140),
-            halign='left',
-            valign='middle',
-            text_size=(dp(140), None)
-        )
-        info_row.add_widget(period_label)
-        
-        date_label = Label(
-            text=f"開獎日期: {record['開獎日期']}",
-            font_name='ChineseFont',
-            font_size='12sp',
-            halign='left',
-            valign='middle',
-            text_size=(None, None)
-        )
-        date_label.bind(size=lambda instance, value: setattr(instance, 'text_size', value))
-        info_row.add_widget(date_label)
-        
-        result_row.add_widget(info_row)
-
-        # 獎號行
-        numbers_row = BoxLayout(
-            size_hint_y=None,
-            height=dp(40)
-        )
-        
-        # 獎號網格
-        winning_nums_layout = GridLayout(
-            cols=3,
-            spacing=dp(5)
-        )
-        
-        for i, num in enumerate(record['獎號']):
-            # 檢查是否為重複號碼
-            is_repeated = num in repeated_numbers
-            ball = Lotto3StarResultBall(number=num, selected=is_repeated)
-            winning_nums_layout.add_widget(ball)
-        
-        numbers_row.add_widget(winning_nums_layout)
-        result_row.add_widget(numbers_row)
-        
-        return result_row
+            batch_size = 10
+            total_appends = len(new_records)
+            
+            def append_batch(start_idx):
+                if self.manager.current != self.name:
+                    return
+                end_idx = min(start_idx + batch_size, total_appends)
+                
+                for idx in range(start_idx, end_idx):
+                    item = new_records[idx]
+                    item_widget = self._create_duplicate_item(item)
+                    if hasattr(self.ids, 'results_layout'):
+                        self.ids.results_layout.add_widget(item_widget)
+                    
+                    if item != new_records[-1] or len(self.displayed_results) < len(self.all_results):
+                        separator = BoxLayout(size_hint_y=None, height=dp(1))
+                        with separator.canvas:
+                            Color(rgba=get_color_from_hex('#888888'))
+                            Rectangle(pos=separator.pos, size=separator.size)
+                        if hasattr(self.ids, 'results_layout'):
+                            self.ids.results_layout.add_widget(separator)
+                        
+                if end_idx < total_appends:
+                    Clock.schedule_once(lambda dt: append_batch(end_idx), 0.02)
+                else:
+                    self._add_load_more_indicator()
+                    logger.debug(f"三星彩重複三碼追加記錄完成，共追加 {total_appends} 筆")
+            
+            append_batch(0)
+            
+            Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.05)
+            
+        except Exception as e:
+            logger.exception(f"三星彩重複三碼追加記錄錯誤: {str(e)}")
 
     def _add_load_more_indicator(self):
         """添加載入更多指示器"""
         if not hasattr(self.ids, 'results_layout'):
-            logger.warning("三星彩重複三碼找不到results_layout，無法添加載入指示器")
             return
             
         load_more_box = BoxLayout(
@@ -1935,15 +1765,8 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
             padding=(dp(10), dp(10))
         )
         
-        # 根據是否還有更多資料設定不同的文字和透明度
-        if self.has_more_data:
-            text = "滑動到底部載入更多"
-            opacity = 0.7
-            logger.debug(f"三星彩重複三碼添加載入指示器: {text}")
-        else:
-            text = "已顯示全部資料"
-            opacity = 0.5
-            logger.debug(f"三星彩重複三碼添加載入指示器: {text}")
+        text = "滑動到底部載入更多" if self.has_more_data else "已顯示全部資料"
+        opacity = 0.7 if self.has_more_data else 0.5
         
         load_more_label = Label(
             text=text,
@@ -1959,452 +1782,39 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
         load_more_box.add_widget(load_more_label)
         self.ids.results_layout.add_widget(load_more_box)
         
-        # 儲存引用以便後續更新
         self.load_more_indicator = load_more_box
         self.load_more_label = load_more_label
-
-    def _load_next_page(self):
-        """載入下一頁資料"""
-        if self.is_loading_more or not self.has_more_data:
-            logger.debug(f"三星彩重複三碼跳過載入下一頁: is_loading_more={self.is_loading_more}, has_more_data={self.has_more_data}")
-            return
-        
-        logger.debug(f"三星彩重複三碼開始載入下一頁: 當前已顯示={len(self.displayed_results)}, 總筆數={len(self.all_results)}")
-        
-        self.is_loading_more = True
-        
-        # 顯示載入提示
-        self._show_loading_indicator()
-        
-        # 延遲載入，避免UI阻塞
-        Clock.schedule_once(lambda dt: self._perform_load_next_page(), 0.2)
-
-    def _perform_load_next_page(self):
-        """實際執行下一頁載入"""
-        try:
-            # 保存當前滾動位置
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                current_content_height = self.ids.results_layout.height
-                current_viewport_height = scroll_view.height
-                current_absolute_scroll = (1 - scroll_view.scroll_y) * max(0, current_content_height - current_viewport_height)
-                logger.debug(f"三星彩重複三碼載入前滾動位置: {current_absolute_scroll:.0f}px")
-            else:
-                current_absolute_scroll = 0
-            
-            start_index = len(self.displayed_results)
-            end_index = min(start_index + self.page_size, len(self.all_results))
-            
-            if start_index < len(self.all_results):
-                # 添加下一頁資料
-                next_page_data = self.all_results[start_index:end_index]
-                self.displayed_results.extend(next_page_data)
-                self.current_page += 1
-                
-                # 預先計算並設定 layout 的高度以防止動態尺寸重新繪製造成的卡頓
-                num_items = len(self.displayed_results)
-                calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
-                if hasattr(self.ids, 'results_layout'):
-                    self.ids.results_layout.height = calculated_height
-
-                # 移除舊的載入指示器
-                self._remove_load_more_indicator()
-                
-                # 添加新的重複號碼項目
-                for i, item in enumerate(next_page_data):
-                    item_widget = self._create_duplicate_item(item)
-                    self.ids.results_layout.add_widget(item_widget)
-                    
-                    # 添加分隔線（除了最後一個項目）
-                    if i < len(next_page_data) - 1:
-                        separator = BoxLayout(size_hint_y=None, height=dp(1))
-                        with separator.canvas:
-                            Color(rgba=get_color_from_hex('#888888'))
-                            Rectangle(pos=separator.pos, size=separator.size)
-                        self.ids.results_layout.add_widget(separator)
-                
-                # 檢查是否還有更多資料
-                self.has_more_data = end_index < len(self.all_results)
-                
-                # 重新添加載入指示器（無論是否還有更多資料）
-                self._add_load_more_indicator()
-                
-                # 恢復滾動位置（延遲執行確保UI更新完成）
-                Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.05)
-                
-                logger.debug(f"三星彩重複三碼載入第{self.current_page}頁: 顯示 {start_index+1}-{end_index} 筆")
-                
-            else:
-                self.has_more_data = False
-                # 當沒有更多資料時，也要更新指示器
-                if hasattr(self, 'load_more_label'):
-                    self.load_more_label.text = "已顯示全部資料"
-                    self.load_more_label.opacity = 0.5
-                
-        except Exception as e:
-            logger.exception(f"三星彩重複三碼載入下一頁錯誤: {str(e)}")
-            show_popup("錯誤", "載入更多資料失敗")
-        finally:
-            self.is_loading_more = False
-            self._hide_loading_indicator()
-
-    def _show_loading_indicator(self):
-        """顯示載入更多指示器"""
-        if hasattr(self, 'load_more_label'):
-            self.load_more_label.text = "載入中..."
-            self.load_more_label.opacity = 1
-
-    def _hide_loading_indicator(self):
-        """隱藏載入更多指示器"""
-        if hasattr(self, 'load_more_label'):
-            if self.has_more_data:
-                self.load_more_label.text = "滑動到底部載入更多"
-                self.load_more_label.opacity = 0.7
-            else:
-                self.load_more_label.text = "已顯示全部資料"
-                self.load_more_label.opacity = 0.5
 
     def _remove_load_more_indicator(self):
         """移除載入更多指示器"""
         if hasattr(self, 'load_more_indicator') and hasattr(self.ids, 'results_layout') and self.load_more_indicator in self.ids.results_layout.children:
             self.ids.results_layout.remove_widget(self.load_more_indicator)
 
-    def _restore_scroll_position_absolute(self, target_absolute_scroll):
-        """根據絕對位置恢復滾動位置"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                new_content_height = self.ids.results_layout.height
-                viewport_height = scroll_view.height
-                
-                # 計算新的相對滾動位置
-                max_scroll = max(0, new_content_height - viewport_height)
-                if max_scroll > 0:
-                    # 準確定位，不加任何偏移以確保無縫滑動
-                    new_scroll_y = 1 - (target_absolute_scroll / max_scroll)
-                    new_scroll_y = max(0, min(1, new_scroll_y))  # 確保在有效範圍內
-                    scroll_view.scroll_y = new_scroll_y
-                    logger.debug(f"三星彩重複三碼載入後滾動位置: {new_scroll_y:.3f}, 內容高度: {new_content_height:.0f}px")
-                else:
-                    scroll_view.scroll_y = 1
-                
-        except Exception as e:
-            logger.exception(f"三星彩重複三碼載入下一頁錯誤: {str(e)}")
-
-    def _set_scrolling_state(self, is_scrolling):
-        """設定滾動狀態"""
-        self.is_scrolling = is_scrolling
-        logger.debug(f"三星彩重複三碼設定滾動狀態: {is_scrolling}")
-
-    def on_scroll_start(self, scroll_view, touch):
-        """滾動開始時的處理"""
-        Clock.unschedule(self._check_inertia_scroll)
-        logger.debug(f"三星彩重複記錄詳情開始監控慣性滾動")
-        
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            logger.debug("三星彩重複三碼慣性滾動結束，啟用排序按鈕")
-            return
-        
-        # 記錄觸摸開始位置和時間
-        self._touch_start_pos = touch.pos
-        self._touch_start_time = touch.time_start
-        logger.debug(f"三星彩重複三碼觸摸開始: 位置{touch.pos}, 時間{touch.time_start}")
-
-    def on_scroll_move(self, scroll_view, touch):
-        """滾動移動時檢查是否為真正的滑動"""
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            return
-        
-        # 檢查是否有觸摸開始記錄
-        if not hasattr(self, '_touch_start_pos') or not hasattr(self, '_touch_start_time'):
-            return
-        
-        # 計算移動距離
-        if self._touch_start_pos:
-            dx = abs(touch.pos[0] - self._touch_start_pos[0])
-            dy = abs(touch.pos[1] - self._touch_start_pos[1])
-            distance = (dx * dx + dy * dy) ** 0.5
-            
-            # 只有移動距離超過閾值才認為是滑動
-            if distance > 20:  # 20像素的移動閾值
-                if not self.is_scrolling:
-                    # 立即設定滾動狀態
-                    self._set_scrolling_state(True)
-                    logger.debug(f"三星彩重複三碼檢測到滑動，移動距離: {distance:.1f}px")
-
-    def on_scroll_end(self, scroll_view, touch):
-        """滾動結束時檢查是否需要載入更多"""
-        logger.debug(f"三星彩滾動開始事件觸發！")
-        
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            logger.debug("三星彩重複三碼慣性檢查超時，強制啟用排序按鈕")
-            return
-        
-        # 計算總移動距離和時間
-        if hasattr(self, '_touch_start_pos') and hasattr(self, '_touch_start_time'):
-            if self._touch_start_pos:
-                dx = abs(touch.pos[0] - self._touch_start_pos[0])
-                dy = abs(touch.pos[1] - self._touch_start_pos[1])
-                distance = (dx * dx + dy * dy) ** 0.5
-                duration = touch.time_start - self._touch_start_time
-                
-                logger.debug(f"三星彩重複三碼觸摸結束: 移動距離{distance:.1f}px, 持續時間{duration:.2f}s")
-                
-                # 如果有滑動，需要等待慣性滾動結束
-                if distance > 20:
-                    # 開始監控慣性滾動
-                    self._start_inertia_monitoring(scroll_view)
-                    logger.debug("三星彩重複三碼確保排序按鈕可用")
-                else:
-                    # 沒有明顯滑動，立即重置滾動狀態
-                    self._set_scrolling_state(False)
-                    logger.debug("三星彩重複三碼慣性滾動結束")
-        else:
-            # 沒有觸摸記錄，也要重置滾動狀態
-            self._set_scrolling_state(False)
-            logger.debug("三星彩重複三碼慣性滾動結束")
-        
-        # 清除觸摸記錄
-        self._touch_start_pos = None
-        self._touch_start_time = None
-        
-        # 立即檢查是否需要載入更多（不等慣性滾動結束）
-        self._check_load_more_immediate(scroll_view)
-
-    def _start_inertia_monitoring(self, scroll_view):
-        """開始監控慣性滾動"""
-        Clock.unschedule(self._check_inertia_scroll)
-        # 記錄當前滾動位置
-        self._last_scroll_y = scroll_view.scroll_y
-        self._inertia_check_count = 0
-        
-        # 每0.1秒檢查一次滾動位置
-        Clock.schedule_interval(self._check_inertia_scroll, 0.1)
-
-    def _check_inertia_scroll(self, dt):
-        """檢查慣性滾動是否結束"""
-        if not hasattr(self.ids, 'scroll_view'):
-            return False
-        
-        scroll_view = self.ids.scroll_view
-        current_scroll_y = scroll_view.scroll_y
-        
-        # 計算滾動位置變化
-        scroll_change = abs(current_scroll_y - self._last_scroll_y)
-        self._inertia_check_count += 1
-        
-        logger.debug(f"三星彩重複三碼慣性檢查 {self._inertia_check_count}: 位置變化 {scroll_change:.4f}")
-        
-        # 如果滾動位置變化很小，認為慣性滾動結束
-        if scroll_change < 0.001:  # 位置變化小於0.001
-            logger.debug("三星彩重複三碼慣性檢查超時，強制結束")
-            Clock.schedule_once(lambda dt: self._set_scrolling_state(False), 0.1)
-            
-            # 檢查是否需要載入更多
-            self._check_load_more(scroll_view)
-            
-            return False  # 停止定時檢查
-        
-        # 更新上次位置
-        self._last_scroll_y = current_scroll_y
-        
-        # 最多檢查30次（3秒），避免無限檢查
-        if self._inertia_check_count >= 30:
-            logger.debug("三星彩重複三碼慣性滾動結束，重置滾動狀態")
-            Clock.schedule_once(lambda dt: self._set_scrolling_state(False), 0.1)
-            return False
-        
-        return True  # 繼續檢查
-
-    def _check_load_more_immediate(self, scroll_view):
-        """立即檢查是否需要載入更多資料（不等慣性滾動結束）"""
-        if not self.has_more_data or self.is_loading_more:
-            return
-        
-        # 檢查是否接近底部（在到達底部前就開始載入）
-        content_height = self.ids.results_layout.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        # 當剩餘內容少於1.5個螢幕高度時開始載入
-        if remaining_content <= viewport_height * 1.5:
-            logger.debug(f"三星彩重複三碼立即檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
-            self._load_next_page()
-
-    def _check_load_more(self, scroll_view):
-        """檢查是否需要載入更多資料（慣性滾動結束後的補充檢查）"""
-        if not self.has_more_data or self.is_loading_more:
-            return
-        
-        # 檢查是否接近底部（在到達底部前就開始載入）
-        content_height = self.ids.results_layout.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        # 當剩餘內容少於1.5個螢幕高度時開始載入
-        if remaining_content <= viewport_height * 1.5:
-            logger.debug(f"三星彩重複三碼慣性滾動結束後檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
-            self._load_next_page()
-
-    def _disable_scroll_events(self):
-        """暫時禁用滾動事件檢測"""
-        self._scroll_events_disabled = True
-        logger.debug("三星彩重複三碼暫時禁用滾動事件")
-
-    def _enable_scroll_events(self):
-        """重新啟用滾動事件檢測"""
-        self._scroll_events_disabled = False
-        logger.debug("三星彩重複三碼重新啟用滾動事件")
-
-    def _reset_scroll_to_top(self):
-        """重置滾動位置到頂部"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                # 先停止任何正在進行的滾動
-                self._stop_scrolling()
-                # 使用多次延遲確保UI完全更新後執行
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.2)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.4)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.6)
-                logger.debug("三星彩重複三碼滾動位置已重置到頂部")
-        except Exception as e:
-            logger.exception(f"三星彩重複三碼重置滾動位置錯誤: {str(e)}")
-
-    def _stop_scrolling(self):
-        """停止當前的滾動動作"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 取消任何正在進行的動畫
-                Animation.cancel_all(scroll_view)
-                # 停止滾動效果
-                if hasattr(scroll_view, 'scroll_timeout'):
-                    Clock.unschedule(scroll_view.scroll_timeout)
-                # 立即設定位置
-                scroll_view.scroll_y = 1
-                logger.debug("三星彩重複三碼停止滾動動作並立即重置")
-        except Exception as e:
-            logger.exception(f"三星彩重複三碼停止滾動錯誤: {str(e)}")
-
-    def _force_scroll_to_top(self):
-        """強制滾動到頂部"""
-        try:
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                # 停止任何動畫
-                Animation.cancel_all(scroll_view)
-                
-                # 使用Animation強制滾動到頂部
-                anim = Animation(scroll_y=1, duration=0.1)
-                anim.start(scroll_view)
-                
-                # 同時直接設定位置
-                scroll_view.scroll_y = 1
-                
-                logger.debug(f"三星彩重複三碼強制滾動位置: {scroll_view.scroll_y}")
-        except Exception as e:
-            logger.exception(f"三星彩重複三碼強制滾動錯誤: {str(e)}")
-
     def _save_pagination_state(self):
-        """保存當前分頁狀態（不保存滾動位置）"""
         try:
             self.saved_current_page = self.current_page
             self.saved_displayed_results = self.displayed_results.copy()
-            logger.debug(f"三星彩重複三碼保存分頁狀態: 頁數={self.saved_current_page}, 已顯示筆數={len(self.saved_displayed_results)}")
         except Exception as e:
-            logger.exception(f"三星彩重複記錄詳情更新錯誤: {str(e)}")
+            logger.exception(f"保存分頁狀態錯誤: {e}")
 
     def _restore_pagination_state(self):
-        """恢復之前保存的分頁狀態"""
         try:
-            logger.debug(f"三星彩重複三碼開始恢復分頁狀態: 頁數={self.saved_current_page}, 已顯示筆數={len(self.saved_displayed_results)}")
-            
-            # 快速恢復分頁狀態
             self.all_results = self.duplicates
             self.displayed_results = self.saved_displayed_results.copy()
             self.current_page = self.saved_current_page
             self.has_more_data = len(self.displayed_results) < len(self.all_results)
             
-            # 確保滾動狀態正確初始化
             self.is_scrolling = False
             self._scroll_events_disabled = False
             
-            # 分批次更新UI，避免一次性創建太多組件
-            self._batch_update_result_list()
-            
+            self._update_result_list()
         except Exception as e:
-            logger.exception(f"三星彩重複三碼恢復分頁狀態錯誤: {str(e)}")
-            # 如果恢復失敗，回退到重新載入第一頁
+            logger.exception(f"恢復分頁狀態錯誤: {e}")
             Clock.schedule_once(lambda dt: self.populate_duplicate_list(reset_scroll=False), 0.1)
 
     def _batch_update_result_list(self):
-        """分批次更新結果列表，避免UI阻塞"""
-        try:
-            # 清除結果列表
-            self.ids.results_layout.clear_widgets()
-            
-            # 如果沒有結果，顯示提示
-            if not self.displayed_results:
-                self.ids.results_layout.height = dp(100)
-                no_data_label = Label(
-                    text='沒有重複的三碼組合',
-                    font_name='ChineseFont',
-                    font_size=dp(18),
-                    color=get_color_from_hex('#FF0000'),
-                    halign='center',
-                    valign='middle',
-                    size_hint_y=None,
-                    height=dp(100)
-                )
-                self.ids.results_layout.add_widget(no_data_label)
-                return
+        self._update_result_list()
 
-            # 開始前設定最終的 height，防止分批新增 widget 時每次都觸發重新測量尺寸的卡頓
-            num_items = len(self.displayed_results)
-            calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
-            self.ids.results_layout.height = calculated_height
-
-            # 分批次添加UI組件，每批10個
-            batch_size = 10
-            total_items = len(self.displayed_results)
-            
-            def add_batch(start_index):
-                end_index = min(start_index + batch_size, total_items)
-                
-                for i in range(start_index, end_index):
-                    item = self.displayed_results[i]
-                    item_widget = self._create_duplicate_item(item)
-                    self.ids.results_layout.add_widget(item_widget)
-                    
-                    # 添加分隔線（除了最後一個項目）
-                    if i < total_items - 1:
-                        separator = BoxLayout(size_hint_y=None, height=dp(1))
-                        with separator.canvas:
-                            Color(rgba=get_color_from_hex('#888888'))
-                            Rectangle(pos=separator.pos, size=separator.size)
-                        self.ids.results_layout.add_widget(separator)
-                
-                # 如果還有更多項目，繼續下一批
-                if end_index < total_items:
-                    Clock.schedule_once(lambda dt: add_batch(end_index), 0.05)
-                else:
-                    # 所有項目添加完成，添加載入指示器
-                    self._add_load_more_indicator()
-                    logger.debug(f"三星彩重複三碼分批更新完成: 共{total_items}筆")
-            
-            # 開始第一批
-            add_batch(0)
-
-        except Exception as e:
-            traceback.print_exc()
-            logger.exception(f"三星彩重複三碼批次更新結果列表錯誤: {str(e)}")
-
-    
     def back_to_query(self):
         from kivy.app import App
         App.get_running_app().ad_manager.show_interstitial(on_close_callback=self._real_back_to_query)
@@ -2413,51 +1823,18 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
         self.manager.current = 'lotto3star'
 
     def show_popup(self, title, message):
-        """顯示消息彈窗"""
         content = BoxLayout(orientation='vertical', padding=10, spacing=10)
-        
-        # 添加標題
-        title_label = Label(
-            text=title,
-            font_name='ChineseFont',
-            font_size=dp(16),
-            bold=True,
-            color=(1, 0, 0, 1)
-        )
+        title_label = Label(text=title, font_name='ChineseFont', font_size=dp(16), bold=True, color=(1, 0, 0, 1))
         content.add_widget(title_label)
-        
-        # 添加消息內容
-        message_label = Label(
-            text=message,
-            font_name='ChineseFont',
-            font_size=dp(14)
-        )
+        message_label = Label(text=message, font_name='ChineseFont', font_size=dp(14))
         content.add_widget(message_label)
-        
-        # 添加確定按鈕
-        btn = Button(
-            text="確定",
-            size_hint_y=None,
-            height=40,
-            font_name='ChineseFont'
-        )
-        
-        # 創建彈窗
-        popup = Popup(
-            title='',
-            content=content,
-            size_hint=(0.7, 0.3),
-            separator_height=0
-        )
-        
-        # 綁定按鈕事件
+        btn = Button(text="確定", size_hint_y=None, height=40, font_name='ChineseFont')
+        popup = Popup(title='', content=content, size_hint=(0.7, 0.3), separator_height=0)
         btn.bind(on_press=popup.dismiss)
         content.add_widget(btn)
-        
         popup.open()
 
-
-class Lotto3StarDuplicateDetailScreen(Screen):
+class Lotto3StarDuplicateDetailScreen(Screen, BaseScrollMixin):
     """三星彩重複記錄詳情"""
     details = ListProperty([])
     
@@ -2737,248 +2114,6 @@ class Lotto3StarDuplicateDetailScreen(Screen):
         if hasattr(self, 'load_more_indicator') and hasattr(self.ids, 'detail_list') and self.load_more_indicator in self.ids.detail_list.children:
             self.ids.detail_list.remove_widget(self.load_more_indicator)
 
-    def on_scroll_start(self, scroll_view, touch):
-        """滾動開始時的處理"""
-        Clock.unschedule(self._check_inertia_scroll)
-        logger.debug(f"三星彩重複三碼滾動結束事件觸發！")
-        
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            logger.debug("三星彩重複記錄詳情清空結果列表")
-            return
-        
-        # 記錄觸摸開始位置和時間
-        self._touch_start_pos = touch.pos
-        self._touch_start_time = touch.time_start
-        logger.debug(f"三星彩重複記錄詳情觸摸開始: 位置{touch.pos}, 時間{touch.time_start}")
-
-    def on_scroll_move(self, scroll_view, touch):
-        """滾動移動時檢查是否為真正的滑動"""
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            return
-        
-        # 檢查是否有觸摸開始記錄
-        if not hasattr(self, '_touch_start_pos') or not hasattr(self, '_touch_start_time'):
-            return
-        
-        # 計算移動距離
-        if self._touch_start_pos:
-            dx = abs(touch.pos[0] - self._touch_start_pos[0])
-            dy = abs(touch.pos[1] - self._touch_start_pos[1])
-            distance = (dx * dx + dy * dy) ** 0.5
-            
-            # 只有移動距離超過閾值才認為是滑動
-            if distance > 20:  # 20像素的移動閾值
-                if not self.is_scrolling:
-                    # 立即設定滾動狀態
-                    self.is_scrolling = True
-                    logger.debug(f"三星彩重複記錄詳情檢測到滑動，移動距離: {distance:.1f}px")
-
-    def on_scroll_end(self, scroll_view, touch):
-        """滾動結束時檢查是否需要載入更多"""
-        logger.debug(f"三星彩重複記錄詳情滾動開始事件觸發！")
-        
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            logger.debug("三星彩重複記錄詳情慣性滾動結束")
-            return
-        
-        # 計算總移動距離和時間
-        if hasattr(self, '_touch_start_pos') and hasattr(self, '_touch_start_time'):
-            if self._touch_start_pos:
-                dx = abs(touch.pos[0] - self._touch_start_pos[0])
-                dy = abs(touch.pos[1] - self._touch_start_pos[1])
-                distance = (dx * dx + dy * dy) ** 0.5
-                duration = touch.time_start - self._touch_start_time
-                
-                logger.debug(f"三星彩重複記錄詳情觸摸結束: 移動距離{distance:.1f}px, 持續時間{duration:.2f}s")
-                
-                # 如果有滑動，需要等待慣性滾動結束
-                if distance > 20:
-                    # 開始監控慣性滾動
-                    self._start_inertia_monitoring(scroll_view)
-                    logger.debug("三星彩重複記錄詳情慣性滾動結束")
-                else:
-                    # 沒有明顯滑動，立即重置滾動狀態
-                    self.is_scrolling = False
-                    logger.debug("三星彩重複記錄詳情慣性檢查超時，強制結束")
-        else:
-            # 沒有觸摸記錄，也要重置滾動狀態
-            self.is_scrolling = False
-            logger.debug("三星彩重複記錄詳情沒有觸摸記錄，立即重置滾動狀態")
-        
-        # 清除觸摸記錄
-        self._touch_start_pos = None
-        self._touch_start_time = None
-        
-        # 立即檢查是否需要載入更多（不等慣性滾動結束）
-        self._check_load_more_immediate(scroll_view)
-
-    def _start_inertia_monitoring(self, scroll_view):
-        """開始監控慣性滾動"""
-        Clock.unschedule(self._check_inertia_scroll)
-        # 記錄當前滾動位置
-        self._last_scroll_y = scroll_view.scroll_y
-        self._inertia_check_count = 0
-        
-        # 每0.1秒檢查一次滾動位置
-        Clock.schedule_interval(self._check_inertia_scroll, 0.1)
-
-    def _check_inertia_scroll(self, dt):
-        """檢查慣性滾動是否結束"""
-        # 檢查滾動視圖是否存在，可能是 detail_scroll 或其他ID
-        scroll_view = None
-        if hasattr(self.ids, 'detail_scroll'):
-            scroll_view = self.ids.detail_scroll
-        elif hasattr(self.ids, 'scroll_view'):
-            scroll_view = self.ids.scroll_view
-        
-        if not scroll_view:
-            logger.debug("三星彩重複三碼滾動事件被禁用，忽略滾動開始")
-            return False
-        
-        current_scroll_y = scroll_view.scroll_y
-        
-        # 計算滾動位置變化
-        scroll_change = abs(current_scroll_y - self._last_scroll_y)
-        self._inertia_check_count += 1
-        
-        logger.debug(f"三星彩重複記錄詳情慣性檢查 {self._inertia_check_count}: 位置變化 {scroll_change:.4f}")
-        
-        # 如果滾動位置變化很小，認為慣性滾動結束
-        if scroll_change < 0.001:  # 位置變化小於0.001
-            logger.debug("三星彩重複三碼滾動事件被禁用，忽略滾動開始")
-            self.is_scrolling = False
-            
-            # 檢查是否需要載入更多
-            self._check_load_more(scroll_view)
-            
-            return False  # 停止定時檢查
-        
-        # 更新上次位置
-        self._last_scroll_y = current_scroll_y
-        
-        # 最多檢查30次（3秒），避免無限檢查
-        if self._inertia_check_count >= 30:
-            logger.debug("三星彩重複記錄詳情慣性檢查超時，強制重置滾動狀態")
-            self.is_scrolling = False
-            return False
-        
-        return True  # 繼續檢查
-
-    def _check_load_more_immediate(self, scroll_view):
-        """立即檢查是否需要載入更多資料（不等慣性滾動結束）"""
-        logger.debug(f"三星彩重複記錄詳情檢查載入更多: has_more_data={self.has_more_data}, is_loading_more={self.is_loading_more}")
-        
-        if not self.has_more_data or self.is_loading_more:
-            logger.debug(f"三星彩重複記錄詳情滾動結束事件觸發！")
-            return
-        
-        # 檢查是否接近底部（在到達底部前就開始載入）
-        content_height = self.ids.detail_list.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        logger.debug(f"三星彩重複記錄詳情滾動檢查: scroll_y={scroll_view.scroll_y:.3f}, 內容高度={content_height:.0f}, 視窗高度={viewport_height:.0f}, 剩餘內容={remaining_content:.0f}")
-        
-        # 當剩餘內容少於1.5個螢幕高度時開始載入
-        if remaining_content <= viewport_height * 1.5:
-            logger.debug(f"三星彩重複記錄詳情立即檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
-            self._load_next_page()
-
-    def _check_load_more(self, scroll_view):
-        """檢查是否需要載入更多資料（慣性滾動結束後的補充檢查）"""
-        logger.debug(f"三星彩重複記錄詳情慣性滾動後檢查載入更多: has_more_data={self.has_more_data}, is_loading_more={self.is_loading_more}")
-        
-        if not self.has_more_data or self.is_loading_more:
-            logger.debug(f"三星彩中獎詳情滾動開始事件觸發！")
-            return
-        
-        # 檢查是否接近底部（在到達底部前就開始載入）
-        content_height = self.ids.detail_list.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        logger.debug(f"三星彩重複記錄詳情慣性滾動後檢查: scroll_y={scroll_view.scroll_y:.3f}, 剩餘內容={remaining_content:.0f}")
-        
-        # 當剩餘內容少於1.5個螢幕高度時開始載入
-        if remaining_content <= viewport_height * 1.5:
-            logger.debug(f"三星彩重複記錄詳情慣性滾動結束後檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
-            self._load_next_page()
-
-    def _reset_scroll_to_top(self):
-        """重置滾動位置到頂部"""
-        try:
-            # 檢查滾動視圖是否存在，可能是 detail_scroll 或其他ID
-            scroll_view = None
-            if hasattr(self.ids, 'detail_scroll'):
-                scroll_view = self.ids.detail_scroll
-            elif hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-            
-            if scroll_view:
-                # 先停止任何正在進行的滾動
-                self._stop_scrolling()
-                # 使用多次延遲確保UI完全更新後執行
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.2)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.4)
-                Clock.schedule_once(lambda dt: self._force_scroll_to_top(), 0.6)
-                logger.debug("三星彩重複記錄詳情滾動位置已重置到頂部")
-            else:
-                logger.warning("三星彩重複記錄詳情找不到滾動視圖")
-        except Exception as e:
-            logger.exception(f"三星彩重複三碼查詢錯誤: {str(e)}")
-
-    def _stop_scrolling(self):
-        """停止當前的滾動動作"""
-        try:
-            # 檢查滾動視圖是否存在
-            scroll_view = None
-            if hasattr(self.ids, 'detail_scroll'):
-                scroll_view = self.ids.detail_scroll
-            elif hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-            
-            if scroll_view:
-                # 取消任何正在進行的動畫
-                Animation.cancel_all(scroll_view)
-                # 停止滾動效果
-                if hasattr(scroll_view, 'scroll_timeout'):
-                    Clock.unschedule(scroll_view.scroll_timeout)
-                # 立即設定位置
-                scroll_view.scroll_y = 1
-                logger.debug("三星彩重複記錄詳情停止滾動動作並立即重置")
-        except Exception as e:
-            logger.exception(f"三星彩重複記錄詳情停止滾動錯誤: {str(e)}")
-
-    def _force_scroll_to_top(self):
-        """強制滾動到頂部"""
-        try:
-            # 檢查滾動視圖是否存在
-            scroll_view = None
-            if hasattr(self.ids, 'detail_scroll'):
-                scroll_view = self.ids.detail_scroll
-            elif hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-            
-            if scroll_view:
-                # 停止任何動畫
-                Animation.cancel_all(scroll_view)
-                
-                # 使用Animation強制滾動到頂部
-                anim = Animation(scroll_y=1, duration=0.1)
-                anim.start(scroll_view)
-                
-                # 同時直接設定位置
-                scroll_view.scroll_y = 1
-                
-                logger.debug(f"三星彩重複記錄詳情強制滾動位置: {scroll_view.scroll_y}")
-        except Exception as e:
-            logger.exception(f"三星彩重複記錄詳情強制滾動錯誤: {str(e)}")
-    
     def back_to_duplicate(self):
         # 返回重複三碼查詢頁面（會自動重新查詢並置頂）
         logger.debug("三星彩重複記錄詳情返回重複三碼查詢頁面")
@@ -2986,7 +2121,7 @@ class Lotto3StarDuplicateDetailScreen(Screen):
         self.manager.current = 'lotto3star_repeated_numbers'
 
 
-class Lotto3StarWinningDetailsScreen(Screen):
+class Lotto3StarWinningDetailsScreen(Screen, BaseScrollMixin):
     """三星彩自選號中獎詳情"""
     sort_order = StringProperty('DESC')
     
@@ -3589,163 +2724,6 @@ class Lotto3StarWinningDetailsScreen(Screen):
         except Exception as e:
             logger.exception(f"三星彩中獎詳情強制滾動錯誤: {str(e)}")
 
-    def on_scroll_start(self, scroll_view, touch):
-        """滾動開始時的處理"""
-        Clock.unschedule(self._check_inertia_scroll)
-        logger.debug(f"三星彩中獎詳情滾動開始事件觸發！scroll_y={scroll_view.scroll_y:.3f}")
-        
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            logger.debug("三星彩中獎詳情排序按鈕已存在")
-            return
-        
-        # 檢查觸摸是否在排序按鈕上
-        if hasattr(self.ids, 'sort_btn'):
-            btn = self.ids.sort_btn
-            if btn.collide_point(*touch.pos):
-                logger.debug("三星彩中獎詳情排序按鈕被禁用，忽略排序請求")
-                return
-        
-        # 記錄觸摸開始位置和時間
-        self._touch_start_pos = touch.pos
-        self._touch_start_time = touch.time_start
-        logger.debug(f"三星彩中獎詳情記錄觸摸開始位置: {touch.pos}")
-
-    def on_scroll_move(self, scroll_view, touch):
-        """滾動移動時檢查是否為真正的滑動"""
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            return
-        
-        # 檢查是否有觸摸開始記錄
-        if not hasattr(self, '_touch_start_pos') or not hasattr(self, '_touch_start_time'):
-            return
-        
-        # 計算移動距離
-        if self._touch_start_pos:
-            dx = abs(touch.pos[0] - self._touch_start_pos[0])
-            dy = abs(touch.pos[1] - self._touch_start_pos[1])
-            distance = (dx * dx + dy * dy) ** 0.5
-            
-            # 只有移動距離超過閾值才認為是滑動
-            if distance > 20:  # 20像素的移動閾值
-                if not self.is_scrolling:
-                    # 立即設定滾動狀態並禁用排序按鈕
-                    self._set_scrolling_state(True)
-                    logger.debug(f"三星彩中獎詳情檢測到滑動，移動距離: {distance:.1f}px，立即禁用排序按鈕")
-
-    def on_scroll_end(self, scroll_view, touch):
-        """滾動結束時檢查是否需要載入更多並重新啟用排序按鈕"""
-        logger.debug(f"三星彩中獎詳情滾動結束事件觸發！scroll_y={scroll_view.scroll_y:.3f}")
-        
-        # 檢查是否禁用滾動事件
-        if hasattr(self, '_scroll_events_disabled') and self._scroll_events_disabled:
-            logger.warning("三星彩中獎詳情沒有資料可以排序")
-            return
-        
-        # 計算總移動距離
-        distance = 0
-        if hasattr(self, '_touch_start_pos') and hasattr(self, '_touch_start_time'):
-            if self._touch_start_pos:
-                dx = abs(touch.pos[0] - self._touch_start_pos[0])
-                dy = abs(touch.pos[1] - self._touch_start_pos[1])
-                distance = (dx * dx + dy * dy) ** 0.5
-                logger.debug(f"三星彩中獎詳情觸摸結束: 移動距離{distance:.1f}px")
-        
-        # 如果有明顯滑動，需要等待慣性滾動結束
-        if distance > 20:
-            # 開始監控慣性滾動
-            self._start_inertia_monitoring(scroll_view)
-            logger.debug("三星彩中獎詳情滾動事件被禁用，忽略滾動開始")
-        else:
-            # 沒有明顯滑動，立即重新啟用排序按鈕
-            self._set_scrolling_state(False)
-            logger.debug("三星彩中獎詳情觸摸在排序按鈕上，不禁用排序按鈕")
-        
-        # 清除觸摸記錄
-        self._touch_start_pos = None
-        self._touch_start_time = None
-        
-        # 立即檢查是否需要載入更多（不等慣性滾動結束）
-        self._check_load_more_immediate(scroll_view)
-
-    def _start_inertia_monitoring(self, scroll_view):
-        """開始監控慣性滾動"""
-        Clock.unschedule(self._check_inertia_scroll)
-        # 記錄當前滾動位置
-        self._last_scroll_y = scroll_view.scroll_y
-        self._inertia_check_count = 0
-        
-        # 每0.1秒檢查一次滾動位置
-        Clock.schedule_interval(self._check_inertia_scroll, 0.1)
-
-    def _check_inertia_scroll(self, dt):
-        """檢查慣性滾動是否結束"""
-        if not hasattr(self.ids, 'results_scroll'):
-            return False
-        
-        scroll_view = self.ids.results_scroll
-        current_scroll_y = scroll_view.scroll_y
-        
-        # 計算滾動位置變化
-        scroll_change = abs(current_scroll_y - self._last_scroll_y)
-        self._inertia_check_count += 1
-        
-        logger.debug(f"三星彩中獎詳情慣性檢查 {self._inertia_check_count}: 位置變化 {scroll_change:.4f}")
-        
-        # 如果滾動位置變化很小，認為慣性滾動結束
-        if scroll_change < 0.001:  # 位置變化小於0.001
-            logger.debug("三星彩中獎詳情滾動事件被禁用，忽略滾動結束")
-            Clock.schedule_once(lambda dt: self._set_scrolling_state(False), 0.1)
-            
-            # 檢查是否需要載入更多
-            self._check_load_more(scroll_view)
-            
-            return False  # 停止定時檢查
-        
-        # 更新上次位置
-        self._last_scroll_y = current_scroll_y
-        
-        # 最多檢查30次（3秒），避免無限檢查
-        if self._inertia_check_count >= 30:
-            logger.debug("三星彩中獎詳情開始監控慣性滾動")
-            Clock.schedule_once(lambda dt: self._set_scrolling_state(False), 0.1)
-            return False
-        
-        return True  # 繼續檢查
-
-    def _check_load_more_immediate(self, scroll_view):
-        """立即檢查是否需要載入更多資料（不等慣性滾動結束）"""
-        if not self.has_more_data or self.is_loading_more:
-            return
-        
-        # 檢查是否接近底部（在到達底部前就開始載入）
-        content_height = self.ids.results_layout.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        # 當剩餘內容少於1.5個螢幕高度時開始載入
-        if remaining_content <= viewport_height * 1.5:
-            logger.debug(f"三星彩中獎詳情立即檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
-            self._load_next_page()
-
-    def _check_load_more(self, scroll_view):
-        """檢查是否需要載入更多資料（慣性滾動結束後的補充檢查）"""
-        if not self.has_more_data or self.is_loading_more:
-            return
-        
-        # 檢查是否接近底部（在到達底部前就開始載入）
-        content_height = self.ids.results_layout.height
-        viewport_height = scroll_view.height
-        current_scroll_pos = (1 - scroll_view.scroll_y) * max(0, content_height - viewport_height)
-        remaining_content = content_height - current_scroll_pos - viewport_height
-        
-        # 當剩餘內容少於1.5個螢幕高度時開始載入
-        if remaining_content <= viewport_height * 1.5:
-            logger.debug(f"三星彩中獎詳情慣性滾動結束後檢測到接近底部，載入下一頁 (剩餘內容: {remaining_content:.0f}px)")
-            self._load_next_page()
-
     def _restore_scroll_position_absolute_details(self, target_absolute_scroll):
         """根據絕對位置恢復滾動位置（中獎詳情頁面）"""
         try:
@@ -3898,6 +2876,7 @@ class Lotto3StarWinningDetailsScreen(Screen):
         self.manager.current = 'lotto3star'
 
     def on_leave(self):
+        super().on_leave()
         self.ids.results_layout.clear_widgets()
         self.ids.selected_nums_layout.clear_widgets()
         self.ids.total_count_label.text = '0'
