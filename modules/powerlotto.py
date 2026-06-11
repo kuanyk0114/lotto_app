@@ -31,7 +31,7 @@ from collections import Counter
 from kivy.uix.widget import Widget
 import traceback
 from datetime import datetime
-from modules.common import LoadingPopup, BallButton, ResultBall, show_popup, DatabaseManager, BaseLotteryQueryScreen, BaseLotterySavedScreen, BaseAdvancedResultScreen
+from modules.common import LoadingPopup, BallButton, ResultBall, show_popup, DatabaseManager, BaseLotteryQueryScreen, BaseLotterySavedScreen, BaseAdvancedResultScreen, ClickableBoxLayout
 import logging
 logger = logging.getLogger(__name__)
 
@@ -1635,7 +1635,7 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
 
     def _create_duplicate_item(self, item):
         """創建重複號碼項目的UI組件"""
-        box = BoxLayout(
+        box = ClickableBoxLayout(
             orientation='horizontal',
             size_hint_y=None,
             height=dp(50),
@@ -1661,8 +1661,8 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
         )
         box.add_widget(count_label)
     
-        box.bind(on_touch_down=lambda instance, touch, item=item: 
-                self._handle_duplicate_item_click(instance, touch, item))
+        box.bind(on_release=lambda instance, item=item: 
+                self._handle_duplicate_item_click(instance, item))
     
         return box
 
@@ -1953,7 +1953,7 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
         
         for item in self.duplicates:
             # 創建重複條目 主容器 (單行)
-            box = BoxLayout(
+            box = ClickableBoxLayout(
                 orientation='horizontal',
                 size_hint_y=None,
                 height=dp(50),
@@ -1982,8 +1982,8 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
             box.add_widget(count_label)
         
             # 點擊事件（單擊/雙擊都會觸發）
-            box.bind(on_touch_down=lambda instance, touch, item=item: 
-                    self._handle_duplicate_item_click(instance, touch, item))
+            box.bind(on_release=lambda instance, item=item: 
+                    self._handle_duplicate_item_click(instance, item))
         
             duplicate_list.add_widget(box)
 
@@ -1995,13 +1995,10 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
                 Rectangle(pos=separator.pos, size=separator.size)
             duplicate_list.add_widget(separator)
 
-    def _handle_duplicate_item_click(self, instance, touch, item):
+    def _handle_duplicate_item_click(self, instance, item):
         """處理重複項目的點擊事件 - 單擊/雙擊都顯示詳細資訊"""
-        if instance.collide_point(*touch.pos) and not touch.is_mouse_scrolling:
-            # 無論單擊或雙擊都顯示詳細資訊
-            self.show_duplicate_details(item['numbers'])
-            return True
-        return False
+        # 無論單擊或雙擊都顯示詳細資訊
+        self.show_duplicate_details(item['numbers'])
 
     
     def show_duplicate_details(self, numbers):

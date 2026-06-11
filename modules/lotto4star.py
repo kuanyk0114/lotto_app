@@ -13,7 +13,7 @@ from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
 from kivy.metrics import dp
-from .common import LoadingPopup, BallButton, ResultBall, show_popup, DatabaseManager, BaseLotteryQueryScreen, BaseLotterySavedScreen, BaseAdvancedResultScreen
+from .common import LoadingPopup, BallButton, ResultBall, show_popup, DatabaseManager, BaseLotteryQueryScreen, BaseLotterySavedScreen, BaseAdvancedResultScreen, ClickableBoxLayout
 from kivy.utils import get_color_from_hex
 from kivy.app import App
 from kivy.graphics import Color, Rectangle, Ellipse
@@ -1375,7 +1375,7 @@ class Lotto4StarRepeatedNumbersScreen(Screen):
 
     def _create_duplicate_item(self, item):
         """創建重複號碼項目的UI組件"""
-        box = BoxLayout(
+        box = ClickableBoxLayout(
             orientation='horizontal',
             size_hint_y=None,
             height=dp(50),
@@ -1391,7 +1391,7 @@ class Lotto4StarRepeatedNumbersScreen(Screen):
                 size_hint=(None, None),
                 size=(dp(30), dp(30)))
             box.add_widget(ball)
-    
+     
         count_label = Label(
             text=f"({item['count']}次)",
             font_name='ChineseFont',
@@ -1402,10 +1402,10 @@ class Lotto4StarRepeatedNumbersScreen(Screen):
             halign='center'
         )
         box.add_widget(count_label)
-    
-        box.bind(on_touch_down=lambda instance, touch, item=item: 
-                self._handle_duplicate_item_click(instance, touch, item))
-    
+     
+        box.bind(on_release=lambda instance, item=item: 
+                self._handle_duplicate_item_click(instance, item))
+     
         return box
 
     # 添加分頁載入和滾動處理方法
@@ -1704,11 +1704,8 @@ class Lotto4StarRepeatedNumbersScreen(Screen):
         if remaining_content <= viewport_height * 1.0:
             self._load_next_page()
 
-    def _handle_duplicate_item_click(self, instance, touch, item):
-        if instance.collide_point(*touch.pos) and not touch.is_mouse_scrolling:
-            self.show_duplicate_details(item['numbers'])
-            return True
-        return False
+    def _handle_duplicate_item_click(self, instance, item):
+        self.show_duplicate_details(item['numbers'])
 
     def show_duplicate_details(self, numbers):
         app = App.get_running_app()

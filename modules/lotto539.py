@@ -30,7 +30,7 @@ import traceback
 from collections import Counter
 from kivy.uix.widget import Widget
 from datetime import datetime
-from modules.common import LoadingPopup, BallButton, ResultBall, show_popup, DatabaseManager, BaseLotteryQueryScreen, BaseLotterySavedScreen, BaseAdvancedResultScreen
+from modules.common import LoadingPopup, BallButton, ResultBall, show_popup, DatabaseManager, BaseLotteryQueryScreen, BaseLotterySavedScreen, BaseAdvancedResultScreen, ClickableBoxLayout
 import logging
 logger = logging.getLogger(__name__)
 
@@ -2445,7 +2445,7 @@ class Lotto539DuplicateScreen(Screen):
         
         for item in self.duplicates:
             # 創建重複條目
-            box = BoxLayout(
+            box = ClickableBoxLayout(
                 orientation='horizontal',
                 size_hint_y=None,
                 height=dp(50),
@@ -2474,8 +2474,8 @@ class Lotto539DuplicateScreen(Screen):
             box.add_widget(count_label)
         
             # 點擊事件
-            box.bind(on_touch_down=lambda instance, touch, item=item: 
-                    self._handle_duplicate_item_click(instance, touch, item))
+            box.bind(on_release=lambda instance, item=item: 
+                    self._handle_duplicate_item_click(instance, item))
         
             duplicate_list.add_widget(box)
         
@@ -2486,12 +2486,9 @@ class Lotto539DuplicateScreen(Screen):
                 Rectangle(pos=separator.pos, size=separator.size)
             duplicate_list.add_widget(separator)
 
-    def _handle_duplicate_item_click(self, instance, touch, item):
+    def _handle_duplicate_item_click(self, instance, item):
         """處理重複項目的點擊事件"""
-        if instance.collide_point(*touch.pos) and not touch.is_mouse_scrolling:
-            self.show_duplicate_details(item['numbers'])
-            return True
-        return False
+        self.show_duplicate_details(item['numbers'])
     
     def show_duplicate_details(self, numbers):
         """從 SQLite 載入詳細記錄"""
@@ -3320,7 +3317,7 @@ class Lotto539DuplicateScreen(BaseAdvancedResultScreen):
 
     def _create_duplicate_item(self, item):
         """創建重複號碼項目的UI組件"""
-        box = BoxLayout(
+        box = ClickableBoxLayout(
             orientation='horizontal',
             size_hint_y=None,
             height=dp(50),
@@ -3348,18 +3345,17 @@ class Lotto539DuplicateScreen(BaseAdvancedResultScreen):
         )
         box.add_widget(count_label)
     
-        box.bind(on_touch_down=lambda instance, touch, item=item: 
-                self._handle_duplicate_item_click(instance, touch, item))
+        box.bind(on_release=lambda instance, item=item: 
+                self._handle_duplicate_item_click(instance, item))
     
         return box
 
-    def _handle_duplicate_item_click(self, instance, touch, item):
+    def _handle_duplicate_item_click(self, instance, item):
         """處理重複項目點擊事件"""
-        if instance.collide_point(*touch.pos):
-            # 切換到詳情頁面
-            detail_screen = self.manager.get_screen('lotto539_duplicate_detail')
-            detail_screen.details = item['records']
-            self.manager.current = 'lotto539_duplicate_detail'
+        # 切換到詳情頁面
+        detail_screen = self.manager.get_screen('lotto539_duplicate_detail')
+        detail_screen.details = item['records']
+        self.manager.current = 'lotto539_duplicate_detail'
 
     def back_to_query(self):
         from kivy.app import App

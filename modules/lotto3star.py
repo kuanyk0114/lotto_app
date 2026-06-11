@@ -13,7 +13,7 @@ from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
 from kivy.metrics import dp
-from .common import show_popup, BallButton, ResultBall, LoadingPopup, DatabaseManager, BaseLotteryQueryScreen, BaseLotterySavedScreen, BaseAdvancedResultScreen
+from .common import show_popup, BallButton, ResultBall, LoadingPopup, DatabaseManager, BaseLotteryQueryScreen, BaseLotterySavedScreen, BaseAdvancedResultScreen, ClickableBoxLayout
 from kivy.utils import get_color_from_hex
 from kivy.app import App
 from kivy.graphics import Color, Rectangle, Ellipse
@@ -1576,7 +1576,7 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
             logger.debug(f"創建重複項目，item結構: {item}")
             logger.debug(f"item的keys: {item.keys() if isinstance(item, dict) else 'not a dict'}")
             
-            box = BoxLayout(
+            box = ClickableBoxLayout(
                 orientation='horizontal',
                 size_hint_y=None,
                 height=dp(50),
@@ -1631,8 +1631,8 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
             )
             box.add_widget(count_label)
             
-            box.bind(on_touch_down=lambda instance, touch, item=item: 
-                    self._handle_duplicate_item_click(instance, touch, item))
+            box.bind(on_release=lambda instance, item=item: 
+                    self._handle_duplicate_item_click(instance, item))
             
             return box
             
@@ -1640,28 +1640,24 @@ class Lotto3StarRepeatedNumbersScreen(Screen):
             logger.exception(f"創建重複項目錯誤: {str(e)}")
             logger.debug(f"錯誤項目: {item}")
             traceback.print_exc()
-            return BoxLayout()  # 返回空的佈局
+            return ClickableBoxLayout()  # 返回空的佈局
 
-    def _handle_duplicate_item_click(self, instance, touch, item):
+    def _handle_duplicate_item_click(self, instance, item):
         """處理重複項目點擊事件"""
-        if instance.collide_point(*touch.pos) and not touch.is_mouse_scrolling:
-            logger.debug(f"點擊重複項目: {item}")
-            
-            # 獲取號碼
-            numbers = None
-            if 'numbers' in item:
-                numbers = item['numbers']
-            elif 'combination' in item:
-                numbers = item['combination']
-            
-            if numbers:
-                logger.debug(f"跳轉到詳情頁面，號碼: {numbers}")
-                self.show_duplicate_details(numbers)
-            else:
-                logger.warning(f"無法獲取號碼資料: {item}")
-            
-            return True
-        return False
+        logger.debug(f"點擊重複項目: {item}")
+        
+        # 獲取號碼
+        numbers = None
+        if 'numbers' in item:
+            numbers = item['numbers']
+        elif 'combination' in item:
+            numbers = item['combination']
+        
+        if numbers:
+            logger.debug(f"跳轉到詳情頁面，號碼: {numbers}")
+            self.show_duplicate_details(numbers)
+        else:
+            logger.warning(f"無法獲取號碼資料: {item}")
 
     def show_duplicate_details(self, numbers):
         """顯示重複三碼詳情"""

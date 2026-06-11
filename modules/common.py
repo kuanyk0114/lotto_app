@@ -280,6 +280,9 @@ class ResultBall(BoxLayout):
                 bold=True
             )
             self.add_widget(label)
+class ClickableBoxLayout(ButtonBehavior, BoxLayout):
+    pass
+
 
 class BallButton(ButtonBehavior, Label):
     selected = BooleanProperty(False)
