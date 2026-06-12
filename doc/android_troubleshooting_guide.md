@@ -12,6 +12,7 @@
 5. [選號查詢畫面點擊彩球無反應問題 (座標系統與碰撞偵測)](#5-選號查詢畫面點擊彩球無反應問題-座標系統與碰撞偵測)
 6. [觸控事件重複分發導致選取抵消問題 (Double Touch)](#6-觸控事件重複分發導致選取抵消問題-double-touch)
 7. [重複查詢結果列表滑動誤觸進入詳情問題 (ScrollView Touch-Down Click-Through)](#7-重複查詢結果列表滑動誤觸進入詳情問題-scrollview-touch-down-click-through)
+8. [重複X碼查詢結果列表 Android 滑動嚴重卡頓問題 (ButtonBehavior Touch Grab)](#8-重複x碼查詢結果列表-android-滑動嚴重卡頓問題-buttonbehavior-touch-grab)
 
 ---
 
@@ -183,3 +184,109 @@ APK 啟動後，在執行歷史紀錄查詢或同步時拋出 SQLite 錯誤：`n
   def _handle_duplicate_item_click(self, instance, item):
       self.show_duplicate_details(item['numbers'])
   ```
+
+---
+
+## 8. 重複X碼查詢結果列表 Android 滑動嚴重卡頓問題 (ButtonBehavior Touch Grab)
+
+### 📌 問題描述
+各彩種（威力彩、大樂透、今彩539、三星彩、四星彩）的「重複X碼查詢結果列表頁」在 Windows 桌面端測試完全流暢，但打包成 APK 安裝至 Android 手機/平板後，出現嚴重的滑動卡頓：
+* 進入重複X碼查詢結果頁後，需要等待很長時間才能開始捲動頁面。
+* 捲動一次之後，下一次捲動又需要再等待很長時間才能回應。
+* 即使筆數很少（例如今彩539重複五碼僅 34 筆），卡頓現象依然存在。
+* 但若點進某一筆號碼的「重複記錄詳情頁」，滑動卻完全流暢不卡頓。
+
+### 🔍 根因分析
+
+**核心問題：`ClickableBoxLayout` 繼承的 `ButtonBehavior` 在 `on_touch_down` 時搶佔觸控事件（Touch Grab），與 `ScrollView` 的滾動機制產生衝突。**
+
+原先在第 7 項修復「滑動誤觸」問題時，`ClickableBoxLayout` 直接繼承 `ButtonBehavior`：
+```python
+class ClickableBoxLayout(ButtonBehavior, BoxLayout):
+    pass
+```
+
+`ButtonBehavior` 預設在 `on_touch_down` 時立刻對觸控事件執行 `touch.grab(self)`（搶佔觸控）。在 **Windows 桌面端**，滑鼠滾輪滾動事件繞過了整個觸控流程，因此完全不受影響。但在 **Android 觸控螢幕**上，所有的滑動操作必須從手指按壓（`touch_down`）開始：
+
+1. 手指按壓到列表項目 → `ButtonBehavior.on_touch_down` 立刻 `grab` 該觸控。
+2. `ScrollView` 偵測到觸控已被搶佔 → 進入等待期（`scroll_timeout`），嘗試判斷是點擊還是滑動。
+3. 在等待期間，`ScrollView` 不執行滾動 → 用戶感受到「卡頓」。
+4. 等待期結束後，`ScrollView` 強制取回觸控控制權 → 滑動才回應。
+5. 每次手指新按壓都重複以上流程 → 每次滑動都必須等待。
+
+**重複記錄詳情頁不卡頓的原因**：詳情頁使用的是普通 `BoxLayout`（無 `ButtonBehavior`），`ScrollView` 始終保有觸控控制權，因此滑動完全即時。
+
+### 💡 解決方案
+
+#### 修改一：重寫 `ClickableBoxLayout`（核心修復）
+
+**修改檔案**：`modules/common.py`
+
+將 `ClickableBoxLayout` 從直接繼承 `ButtonBehavior` 改為**覆寫觸控事件處理**，使其不在 `on_touch_down` 時搶佔觸控，讓 `ScrollView` 始終保有觸控主導權：
+
+```python
+class ClickableBoxLayout(ButtonBehavior, BoxLayout):
+    """ScrollView 內可點擊的 BoxLayout（不攔截觸控事件）
+    
+    在 Android 觸控螢幕上，ButtonBehavior 預設會在 on_touch_down 時
+    立刻搶佔（grab）觸控事件，導致 ScrollView 無法偵測滑動手勢。
+    
+    此覆寫版本：
+    - on_touch_down：不呼叫 ButtonBehavior 的 grab，讓 ScrollView 保留觸控權
+    - on_touch_up：判斷手指移動距離 < 20dp 時視為點擊，觸發 on_release
+    """
+    
+    def on_touch_down(self, touch):
+        # 不攔截觸控事件，讓 ScrollView 優先處理滾動判定
+        if self.collide_point(*touch.pos):
+            # 記錄此元件為「可能被點擊」的候選項
+            touch.ud.setdefault('_clickable_candidates', []).append(self)
+        # 跳過 ButtonBehavior，直接使用 BoxLayout 的事件處理
+        # 這樣 ScrollView 能保留觸控權並正常處理滾動
+        return super(BoxLayout, self).on_touch_down(touch)
+    
+    def on_touch_up(self, touch):
+        candidates = touch.ud.get('_clickable_candidates', [])
+        if self in candidates:
+            if self.collide_point(*touch.pos):
+                # 計算手指從按下到抬起的移動距離
+                dx = abs(touch.pos[0] - touch.opos[0])
+                dy = abs(touch.pos[1] - touch.opos[1])
+                distance = (dx * dx + dy * dy) ** 0.5
+                # 移動距離小於 20dp 視為點擊（而非滾動）
+                if distance < dp(20):
+                    self.dispatch('on_release')
+                    return True
+        return super(BoxLayout, self).on_touch_up(touch)
+```
+
+**設計原理**：
+| 機制 | 原版 (ButtonBehavior 預設) | 新版 (覆寫後) |
+|------|---------------------------|---------------|
+| `on_touch_down` | 立刻 `grab` 觸控 → ScrollView 被阻塞 | 僅記錄候選項 → ScrollView 保持觸控權 |
+| 滑動判定 | 依賴 ScrollView 的 `scroll_timeout` 搶回控制權 | ScrollView 從頭主導，無需等待 |
+| 點擊判定 | ButtonBehavior 自動處理 | 在 `on_touch_up` 計算手指移動距離，< 20dp 判定為點擊 |
+| 滑動行為 | 觸發 `on_release` → 誤觸（已被第7項修復） | 移動距離 ≥ 20dp → 不觸發 `on_release` |
+
+#### 修改二：優化 ScrollView 參數（輔助調整）
+
+**修改檔案**：`kv/common.kv`
+
+微調 `ScrollView` 的觸控判定參數，縮短觸控等待時間並增加滑動判定容差：
+
+```yaml
+<CustomScrollView@ScrollView>:
+    scroll_timeout: 80       # 原值 250ms → 80ms，縮短觸控等待時間
+    scroll_distance: dp(15)  # 原值 dp(10) → dp(15)，增加判定為滑動所需的最小移動距離
+```
+
+* `scroll_timeout: 80`：將 ScrollView 等待判定的超時時間從 250ms 縮短至 80ms，減少用戶感受到的延遲。
+* `scroll_distance: dp(15)`：將觸發滾動所需的最小手指移動距離從 10dp 增加至 15dp，降低誤判機率。
+
+> ⚠️ **注意**：此參數調整僅為輔助效果。單獨修改這兩個參數**不足以解決卡頓問題**，核心修復必須依賴修改一中對 `ClickableBoxLayout` 的重寫。
+
+### ✅ 修復結果
+* **影響範圍**：全部五個彩種（威力彩、大樂透、今彩539、三星彩、四星彩）的重複X碼查詢結果列表頁。
+* **APK 實機測試**：Android 手機/平板上的滑動操作恢復完全流暢，不再出現任何卡頓。
+* **無副作用**：點擊列表項目進入詳情頁面的功能正常運作，滑動時不會誤觸進入詳情。
+* **Windows 桌面端**：行為不受影響，滑鼠滾輪與點擊操作維持正常。
