@@ -1126,23 +1126,12 @@ class Lotto4StarRepeatedNumbersScreen(BaseAdvancedResultScreen):
                 ))
                 return
 
-            # 預先計算並設定 layout 的高度以防止動態尺寸重新繪製造成的卡頓
-            num_items = len(self.displayed_results)
-            calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
-            self.ids.duplicate_list.height = calculated_height
 
             # 一次性同步加載所有顯示的項目
             for i, item in enumerate(self.displayed_results):
                 item_widget = self._create_duplicate_item(item)
                 self.ids.duplicate_list.add_widget(item_widget)
                 
-                # 添加分隔線（除了最後一個項目）
-                if i < len(self.displayed_results) - 1:
-                    separator = BoxLayout(size_hint_y=None, height=dp(1))
-                    with separator.canvas:
-                        Color(rgba=get_color_from_hex('#888888'))
-                        Rectangle(pos=separator.pos, size=separator.size)
-                    self.ids.duplicate_list.add_widget(separator)
             
             # 添加載入指示器
             self._add_load_more_indicator()
@@ -1167,30 +1156,16 @@ class Lotto4StarRepeatedNumbersScreen(BaseAdvancedResultScreen):
             
             # 移除舊的載入指示器
             self._remove_load_more_indicator()
-            
-            # 預先計算並設定 layout 的高度以防止動態尺寸重新繪製造成的卡頓
-            num_items = len(self.displayed_results)
-            calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
-            self.ids.duplicate_list.height = calculated_height
-
             # 同步追加所有新記錄
             for item in new_records:
                 item_widget = self._create_duplicate_item(item)
                 self.ids.duplicate_list.add_widget(item_widget)
-                
-                # 添加分隔線（除了最後一個項目）
-                if item != new_records[-1] or len(self.displayed_results) < len(self.all_results):
-                    separator = BoxLayout(size_hint_y=None, height=dp(1))
-                    with separator.canvas:
-                        Color(rgba=get_color_from_hex('#888888'))
-                        Rectangle(pos=separator.pos, size=separator.size)
-                    self.ids.duplicate_list.add_widget(separator)
             
             # 重新添加載入指示器
             self._add_load_more_indicator()
             
-            # 恢復滾動位置 (由於已經預設了 calculated_height，故可以提前安全恢復)
-            Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.05)
+            # 恢復滾動位置
+            Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.1)
             logger.debug(f"四星彩重複四碼同步追加記錄完成，共追加 {len(new_records)} 筆")
             
         except Exception as e:
