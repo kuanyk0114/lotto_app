@@ -281,7 +281,38 @@ class ResultBall(BoxLayout):
             )
             self.add_widget(label)
 class ClickableBoxLayout(ButtonBehavior, BoxLayout):
-    pass
+    """ScrollView 內可點擊的 BoxLayout（不攔截觸控事件）
+    
+    在 Android 觸控螢幕上，ButtonBehavior 預設會在 on_touch_down 時
+    立刻搶佔（grab）觸控事件，導致 ScrollView 無法偵測滑動手勢。
+    
+    此覆寫版本：
+    - on_touch_down：不呼叫 ButtonBehavior 的 grab，讓 ScrollView 保留觸控權
+    - on_touch_up：判斷手指移動距離 < 20dp 時視為點擊，觸發 on_release
+    """
+    
+    def on_touch_down(self, touch):
+        # 不攔截觸控事件，讓 ScrollView 優先處理滾動判定
+        if self.collide_point(*touch.pos):
+            # 記錄此元件為「可能被點擊」的候選項
+            touch.ud.setdefault('_clickable_candidates', []).append(self)
+        # 跳過 ButtonBehavior，直接使用 BoxLayout 的事件處理
+        # 這樣 ScrollView 能保留觸控權並正常處理滾動
+        return super(BoxLayout, self).on_touch_down(touch)
+    
+    def on_touch_up(self, touch):
+        candidates = touch.ud.get('_clickable_candidates', [])
+        if self in candidates:
+            if self.collide_point(*touch.pos):
+                # 計算手指從按下到抬起的移動距離
+                dx = abs(touch.pos[0] - touch.opos[0])
+                dy = abs(touch.pos[1] - touch.opos[1])
+                distance = (dx * dx + dy * dy) ** 0.5
+                # 移動距離小於 20dp 視為點擊（而非滾動）
+                if distance < dp(20):
+                    self.dispatch('on_release')
+                    return True
+        return super(BoxLayout, self).on_touch_up(touch)
 
 
 class BallButton(ButtonBehavior, Label):
