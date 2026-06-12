@@ -1383,6 +1383,15 @@ class Lotto539WinningDetailsScreen(Screen, BaseScrollMixin):
     def _append_to_result_list(self, new_records):
         """追加新記錄到結果列表"""
         try:
+            # 保存當前滾動的絕對位置
+            if hasattr(self.ids, 'scroll_view') and hasattr(self.ids, 'results_layout'):
+                scroll_view = self.ids.scroll_view
+                current_content_height = self.ids.results_layout.height
+                current_viewport_height = scroll_view.height
+                current_absolute_scroll = (1 - scroll_view.scroll_y) * max(0, current_content_height - current_viewport_height)
+            else:
+                current_absolute_scroll = 0
+                
             # 移除舊的載入指示器
             self._remove_load_more_indicator()
             
