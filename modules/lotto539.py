@@ -1734,197 +1734,7 @@ class Lotto539WinningDetailsScreen(Screen, BaseScrollMixin):
         
         return None, ''
 
-    def find_duplicates(self):
-        """使用 SQLite 查詢重複五碼"""
-        app = App.get_running_app()
-        db_path = app.resource_path('data/lotto_history.db')
-        self.duplicates = []
 
-        if not os.path.exists(db_path):
-            return
-
-        try:
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-
-            cursor.execute('''
-            SELECT 
-                num1, num2, num3, num4, num5,
-                COUNT(*) as count,
-                GROUP_CONCAT(issue, ', ') as issues
-            FROM lotto_539
-            GROUP BY num1, num2, num3, num4, num5
-            HAVING COUNT(*) > 1
-            ORDER BY count DESC
-            ''')
-
-            for row in cursor.fetchall():
-                self.duplicates.append({
-                    'numbers': sorted([row[0], row[1], row[2], row[3], row[4]]),
-                    'count': row[5],
-                    'issues': row[6]
-                })
-
-            conn.close()
-        except Exception as e:
-            logger.exception(f"重複查詢錯誤: {str(e)}")
-            traceback.print_exc()
-    
-    def populate_duplicate_list(self):
-        """填充重複號碼列表"""
-        duplicate_list = self.ids.duplicate_list
-        duplicate_list.clear_widgets()
-        
-        if not self.duplicates:
-            duplicate_list.add_widget(Label(
-                text="沒有重複的五碼組合",
-                font_name='ChineseFont',
-                font_size=dp(18),
-                color=get_color_from_hex('#FF0000'),
-                halign='center',
-                valign='middle',
-                size_hint_y=None,
-                height=dp(50),
-                padding=(0, dp(20))
-            ))
-            return
-        
-        for item in self.duplicates:
-            # 創建重複條目
-            box = ClickableBoxLayout(
-                orientation='horizontal',
-                size_hint_y=None,
-                height=dp(50),
-                spacing=dp(5),
-                padding=(dp(10), dp(5)))
-
-            # 號碼球
-            for num in sorted(item['numbers']):
-                ball = ResultBall(
-                    number=num, 
-                    area=1,
-                    size_hint=(None, None),
-                    size=(dp(30), dp(30)))
-                box.add_widget(ball)
-        
-            # 重複次數
-            count_label = Label(
-                text=f"({item['count']}次)",
-                font_name='ChineseFont',
-                font_size=dp(20),
-                color=(1, 1, 1, 1),
-                size_hint_x=None,
-                width=dp(40),
-                halign='center'
-            )
-            box.add_widget(count_label)
-        
-            # 點擊事件
-            box.bind(on_release=lambda instance, item=item: 
-                    self._handle_duplicate_item_click(instance, item))
-        
-            duplicate_list.add_widget(box)
-        
-            # 分隔線
-            separator = BoxLayout(size_hint_y=None, height=dp(1))
-            with separator.canvas:
-                Color(rgba=get_color_from_hex('#888888'))
-                Rectangle(pos=separator.pos, size=separator.size)
-            duplicate_list.add_widget(separator)
-
-    def _handle_duplicate_item_click(self, instance, item):
-        """處理重複項目的點擊事件"""
-        self.show_duplicate_details(item['numbers'])
-    
-    def show_duplicate_details(self, numbers):
-        """從 SQLite 載入詳細記錄"""
-        app = App.get_running_app()
-        db_path = app.resource_path('data/lotto_history.db')
-        details = []
-
-        if not os.path.exists(db_path):
-            return
-
-        try:
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-
-            cursor.execute('''
-            SELECT 
-                issue, date,
-                num1, num2, num3, num4, num5
-            FROM lotto_539
-            WHERE num1 IN (?,?,?,?,?)
-              AND num2 IN (?,?,?,?,?)
-              AND num3 IN (?,?,?,?,?)
-              AND num4 IN (?,?,?,?,?)
-              AND num5 IN (?,?,?,?,?)
-            ORDER BY date DESC
-            ''', numbers * 5)
-
-            for row in cursor.fetchall():
-                details.append({
-                    '期別': row[0],
-                    '開獎日期': row[1],
-                    '獎號': [row[2], row[3], row[4], row[5], row[6]]
-                })
-
-            conn.close()
-        except Exception as e:
-            logger.exception(f"詳細記錄查詢錯誤: {str(e)}")
-            traceback.print_exc()
-
-        detail_screen = self.manager.get_screen('lotto539_duplicate_detail')
-        detail_screen.details = details
-        self.manager.current = 'lotto539_duplicate_detail'
-    
-    def back_to_query(self):
-        """返回查詢界面"""
-        self.manager.current = 'lotto539_query'
-
-    def show_popup(self, title, message):
-        """顯示消息彈窗"""
-        content = BoxLayout(orientation='vertical', padding=10, spacing=10)
-        
-        # 添加標題
-        title_label = Label(
-            text=title,
-            font_name='ChineseFont',
-            font_size=dp(16),
-            bold=True,
-            color=(1, 0, 0, 1)
-        )
-        content.add_widget(title_label)
-        
-        # 添加消息內容
-        message_label = Label(
-            text=message,
-            font_name='ChineseFont',
-            font_size=dp(14)
-        )
-        content.add_widget(message_label)
-        
-        # 添加確定按鈕
-        btn = Button(
-            text="確定",
-            size_hint_y=None,
-            height=40,
-            font_name='ChineseFont'
-        )
-        
-        # 創建彈窗
-        popup = Popup(
-            title='',
-            content=content,
-            size_hint=(0.7, 0.3),
-            separator_height=0
-        )
-        
-        # 綁定按鈕事件
-        btn.bind(on_press=popup.dismiss)
-        content.add_widget(btn)
-        
-        popup.open()
 
 
 class Lotto539DuplicateDetailScreen(Screen, BaseScrollMixin):
@@ -2347,46 +2157,29 @@ class Lotto539DuplicateScreen(BaseAdvancedResultScreen):
             calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
             self.ids.duplicate_list.height = calculated_height
 
-            # 分批次添加UI組件，每批10個
-            batch_size = 10
-            total_items = len(self.displayed_results)
-            
-            def add_batch(start_index):
-                # 確保在非活躍狀態時不繼續添加
-                if self.manager.current != self.name:
-                    return
-                end_index = min(start_index + batch_size, total_items)
+            # 一次性同步加載所有顯示的項目
+            for i, item in enumerate(self.displayed_results):
+                item_widget = self._create_duplicate_item(item)
+                self.ids.duplicate_list.add_widget(item_widget)
                 
-                for i in range(start_index, end_index):
-                    item = self.displayed_results[i]
-                    item_widget = self._create_duplicate_item(item)
-                    self.ids.duplicate_list.add_widget(item_widget)
-                    
-                    # 添加分隔線（除了最後一個項目）
-                    if i < total_items - 1:
-                        separator = BoxLayout(size_hint_y=None, height=dp(1))
-                        with separator.canvas:
-                            Color(rgba=get_color_from_hex('#888888'))
-                            Rectangle(pos=separator.pos, size=separator.size)
-                        self.ids.duplicate_list.add_widget(separator)
-                
-                # 如果還有更多項目，繼續下一批
-                if end_index < total_items:
-                    Clock.schedule_once(lambda dt: add_batch(end_index), 0.02)
-                else:
-                    # 所有項目添加完成，添加載入指示器
-                    self._add_load_more_indicator()
-                    logger.debug(f"今彩539重複五碼分批更新完成: 共{total_items}筆")
+                # 添加分隔線（除了最後一個項目）
+                if i < len(self.displayed_results) - 1:
+                    separator = BoxLayout(size_hint_y=None, height=dp(1))
+                    with separator.canvas:
+                        Color(rgba=get_color_from_hex('#888888'))
+                        Rectangle(pos=separator.pos, size=separator.size)
+                    self.ids.duplicate_list.add_widget(separator)
             
-            # 開始第一批
-            add_batch(0)
+            # 添加載入指示器
+            self._add_load_more_indicator()
+            logger.debug(f"今彩539重複五碼同步更新完成: 共{num_items}筆")
             
         except Exception as e:
             logger.exception(f"今彩539重複五碼更新列表錯誤: {str(e)}")
             traceback.print_exc()
     
     def _append_to_result_list(self, new_records):
-        """追加新記錄到結果列表 - 實現基類抽象方法，採分批次渲染"""
+        """追加新記錄到結果列表 - 實現基類抽象方法"""
         try:
             # 確保在非活躍狀態時不繼續添加
             if self.manager.current != self.name:
@@ -2406,48 +2199,32 @@ class Lotto539DuplicateScreen(BaseAdvancedResultScreen):
             calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
             self.ids.duplicate_list.height = calculated_height
 
-            # 分批次追加，每批10個項目
-            batch_size = 10
-            total_appends = len(new_records)
-            
-            def append_batch(start_idx):
-                # 確保在非活躍狀態時不繼續添加
-                if self.manager.current != self.name:
-                    return
-                end_idx = min(start_idx + batch_size, total_appends)
+            # 同步追加所有新記錄
+            for item in new_records:
+                item_widget = self._create_duplicate_item(item)
+                self.ids.duplicate_list.add_widget(item_widget)
                 
-                for idx in range(start_idx, end_idx):
-                    item = new_records[idx]
-                    item_widget = self._create_duplicate_item(item)
-                    self.ids.duplicate_list.add_widget(item_widget)
-                    
-                    # 添加分隔線（除了最後一個項目）
-                    if item != new_records[-1] or len(self.displayed_results) < len(self.all_results):
-                        separator = BoxLayout(size_hint_y=None, height=dp(1))
-                        with separator.canvas:
-                            Color(rgba=get_color_from_hex('#888888'))
-                            Rectangle(pos=separator.pos, size=separator.size)
-                        self.ids.duplicate_list.add_widget(separator)
-                        
-                if end_idx < total_appends:
-                    Clock.schedule_once(lambda dt: append_batch(end_idx), 0.02)
-                else:
-                    # 所有資料追加完成，重新添加載入指示器
-                    self._add_load_more_indicator()
-                    logger.debug(f"今彩539重複五碼追加記錄完成，共追加 {total_appends} 筆")
+                # 添加分隔線（除了最後一個項目）
+                if item != new_records[-1] or len(self.displayed_results) < len(self.all_results):
+                    separator = BoxLayout(size_hint_y=None, height=dp(1))
+                    with separator.canvas:
+                        Color(rgba=get_color_from_hex('#888888'))
+                        Rectangle(pos=separator.pos, size=separator.size)
+                    self.ids.duplicate_list.add_widget(separator)
             
-            # 開始第一批追加
-            append_batch(0)
+            # 重新添加載入指示器
+            self._add_load_more_indicator()
             
             # 恢復滾動位置 (由於已經預設了 calculated_height，故可以提前安全恢復)
             Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.05)
+            logger.debug(f"今彩539重複五碼同步追加記錄完成，共追加 {len(new_records)} 筆")
             
         except Exception as e:
             logger.exception(f"今彩539重複五碼追加記錄錯誤: {str(e)}")
             traceback.print_exc()
 
     def on_pre_enter(self):
-        # 呼叫基類方法以清理任何背景滾動與定時器
+        # 呼叫基類方法以清理 any 背景滾動與定時器
         super().on_pre_enter()
         self.is_scrolling = False
         self._scroll_events_disabled = False
@@ -2476,47 +2253,35 @@ class Lotto539DuplicateScreen(BaseAdvancedResultScreen):
             show_popup("錯誤", f"查詢失敗: {str(e)}")
 
     def find_duplicates(self):
-        """查找重複的五碼組合"""
+        """使用 SQLite 查詢重複五碼"""
+        self.duplicates = []
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
-            # 查詢所有今彩539記錄
-            cursor.execute("SELECT issue, date, num1, num2, num3, num4, num5 FROM lotto_539 ORDER BY date DESC")
-            rows = cursor.fetchall()
-            conn.close()
+            cursor.execute('''
+            SELECT 
+                num1, num2, num3, num4, num5,
+                COUNT(*) as count,
+                GROUP_CONCAT(issue, ', ') as issues
+            FROM lotto_539
+            GROUP BY num1, num2, num3, num4, num5
+            HAVING COUNT(*) > 1
+            ORDER BY count DESC
+            ''')
             
-            # 統計每個五碼組合的出現次數
-            number_combinations = {}
-            for row in rows:
-                issue, date, n1, n2, n3, n4, n5 = row
-                numbers = tuple(sorted([n1, n2, n3, n4, n5]))
-                
-                if numbers not in number_combinations:
-                    number_combinations[numbers] = []
-                number_combinations[numbers].append({
-                    '期別': issue,
-                    '開獎日期': date,
-                    '獎號': [n1, n2, n3, n4, n5]
+            for row in cursor.fetchall():
+                self.duplicates.append({
+                    'numbers': sorted([row[0], row[1], row[2], row[3], row[4]]),
+                    'count': row[5],
+                    'issues': row[6]
                 })
             
-            # 找出重複的組合（出現次數 > 1）
-            self.duplicates = []
-            for numbers, records in number_combinations.items():
-                if len(records) > 1:
-                    self.duplicates.append({
-                        'numbers': list(numbers),
-                        'count': len(records),
-                        'records': records
-                    })
-            
-            # 按出現次數排序
-            self.duplicates.sort(key=lambda x: x['count'], reverse=True)
-            
-            logger.debug(f"今彩539找到 {len(self.duplicates)} 組重複五碼")
+            conn.close()
+            logger.debug(f"今彩539重複五碼查詢完成: 總筆數={len(self.duplicates)}")
             
         except Exception as e:
-            logger.exception(f"今彩539中獎詳情排序錯誤: {str(e)}")
+            logger.exception(f"今彩539重複查詢錯誤: {str(e)}")
             traceback.print_exc()
             self.duplicates = []
 
@@ -2613,7 +2378,7 @@ class Lotto539DuplicateScreen(BaseAdvancedResultScreen):
         """處理重複項目點擊事件"""
         # 切換到詳情頁面
         detail_screen = self.manager.get_screen('lotto539_duplicate_detail')
-        detail_screen.details = item['records']
+        detail_screen.duplicate_numbers = item['numbers']
         self.manager.current = 'lotto539_duplicate_detail'
 
     def back_to_query(self):

@@ -1419,7 +1419,7 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
             logger.exception(f"重複查詢錯誤: {str(e)}")
 
     def _update_result_list(self):
-        """更新結果列表顯示 - 實現基類抽象方法，採分批次渲染"""
+        """更新結果列表顯示 - 實現基類抽象方法"""
         try:
             # 清空結果列表
             self.ids.duplicate_list.clear_widgets()
@@ -1448,45 +1448,28 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
             calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
             self.ids.duplicate_list.height = calculated_height
 
-            # 分批次添加UI組件，每批10個
-            batch_size = 10
-            total_items = len(self.displayed_results)
-            
-            def add_batch(start_index):
-                # 確保在非活躍狀態時不繼續添加
-                if self.manager.current != self.name:
-                    return
-                end_index = min(start_index + batch_size, total_items)
+            # 一次性同步加載所有顯示的項目
+            for i, item in enumerate(self.displayed_results):
+                item_widget = self._create_duplicate_item(item)
+                self.ids.duplicate_list.add_widget(item_widget)
                 
-                for i in range(start_index, end_index):
-                    item = self.displayed_results[i]
-                    item_widget = self._create_duplicate_item(item)
-                    self.ids.duplicate_list.add_widget(item_widget)
-                    
-                    # 添加分隔線（除了最後一個項目）
-                    if i < total_items - 1:
-                        separator = BoxLayout(size_hint_y=None, height=dp(1))
-                        with separator.canvas:
-                            Color(rgba=get_color_from_hex('#888888'))
-                            Rectangle(pos=separator.pos, size=separator.size)
-                        self.ids.duplicate_list.add_widget(separator)
-                
-                # 如果還有更多項目，繼續下一批
-                if end_index < total_items:
-                    Clock.schedule_once(lambda dt: add_batch(end_index), 0.02)
-                else:
-                    # 所有項目添加完成，添加載入指示器
-                    self._add_load_more_indicator()
-                    logger.debug(f"威力彩重複六碼分批更新完成: 共{total_items}筆")
+                # 添加分隔線（除了最後一個項目）
+                if i < len(self.displayed_results) - 1:
+                    separator = BoxLayout(size_hint_y=None, height=dp(1))
+                    with separator.canvas:
+                        Color(rgba=get_color_from_hex('#888888'))
+                        Rectangle(pos=separator.pos, size=separator.size)
+                    self.ids.duplicate_list.add_widget(separator)
             
-            # 開始第一批
-            add_batch(0)
+            # 添加載入指示器
+            self._add_load_more_indicator()
+            logger.debug(f"威力彩重複六碼同步更新完成: 共{num_items}筆")
             
         except Exception as e:
             logger.exception(f"威力彩重複六碼更新列表錯誤: {str(e)}")
 
     def _append_to_result_list(self, new_records):
-        """追加新記錄到結果列表 - 實現基類抽象方法，採分批次渲染"""
+        """追加新記錄到結果列表 - 實現基類抽象方法"""
         try:
             # 確保在非活躍狀態時不繼續添加
             if self.manager.current != self.name:
@@ -1506,41 +1489,25 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
             calculated_height = num_items * dp(50) + max(0, num_items - 1) * dp(1) + dp(60) + (2 * num_items - 1) * dp(5)
             self.ids.duplicate_list.height = calculated_height
 
-            # 分批次追加，每批10個項目
-            batch_size = 10
-            total_appends = len(new_records)
-            
-            def append_batch(start_idx):
-                # 確保在非活躍狀態時不繼續添加
-                if self.manager.current != self.name:
-                    return
-                end_idx = min(start_idx + batch_size, total_appends)
+            # 同步追加所有新記錄
+            for item in new_records:
+                item_widget = self._create_duplicate_item(item)
+                self.ids.duplicate_list.add_widget(item_widget)
                 
-                for idx in range(start_idx, end_idx):
-                    item = new_records[idx]
-                    item_widget = self._create_duplicate_item(item)
-                    self.ids.duplicate_list.add_widget(item_widget)
-                    
-                    # 添加分隔線（除了最後一個項目）
-                    if item != new_records[-1] or len(self.displayed_results) < len(self.all_results):
-                        separator = BoxLayout(size_hint_y=None, height=dp(1))
-                        with separator.canvas:
-                            Color(rgba=get_color_from_hex('#888888'))
-                            Rectangle(pos=separator.pos, size=separator.size)
-                        self.ids.duplicate_list.add_widget(separator)
-                        
-                if end_idx < total_appends:
-                    Clock.schedule_once(lambda dt: append_batch(end_idx), 0.02)
-                else:
-                    # 所有資料追加完成，重新添加載入指示器
-                    self._add_load_more_indicator()
-                    logger.debug(f"威力彩重複六碼追加記錄完成，共追加 {total_appends} 筆")
+                # 添加分隔線（除了最後一個項目）
+                if item != new_records[-1] or len(self.displayed_results) < len(self.all_results):
+                    separator = BoxLayout(size_hint_y=None, height=dp(1))
+                    with separator.canvas:
+                        Color(rgba=get_color_from_hex('#888888'))
+                        Rectangle(pos=separator.pos, size=separator.size)
+                    self.ids.duplicate_list.add_widget(separator)
             
-            # 開始第一批追加
-            append_batch(0)
+            # 重新添加載入指示器
+            self._add_load_more_indicator()
             
             # 恢復滾動位置 (由於已經預設了 calculated_height，故可以提前安全恢復)
             Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.05)
+            logger.debug(f"威力彩重複六碼同步追加記錄完成，共追加 {len(new_records)} 筆")
             
         except Exception as e:
             logger.exception(f"威力彩重複六碼追加記錄錯誤: {str(e)}")
