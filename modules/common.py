@@ -69,6 +69,39 @@ class DatabaseManager:
             # 保持向後相容性
             self.db_path = self.main_db_path
             self.initialized = True
+            
+            # 初始化索引
+            self._initialize_indexes()
+
+    def _initialize_indexes(self):
+        """為歷史開獎資料庫和自選號資料庫建立必要的索引，以提升查詢與排序效能"""
+        try:
+            # 1. 為主資料庫建立 date 索引
+            with self.get_connection('main') as conn:
+                cursor = conn.cursor()
+                # 建立索引的 SQL 語句列表
+                index_queries = [
+                    "CREATE INDEX IF NOT EXISTS idx_biglotto_date ON big_lotto(date);",
+                    "CREATE INDEX IF NOT EXISTS idx_lotto539_date ON lotto_539(date);",
+                    "CREATE INDEX IF NOT EXISTS idx_lotto3star_date ON lotto_3star(date);",
+                    "CREATE INDEX IF NOT EXISTS idx_lotto4star_date ON lotto_4star(date);"
+                ]
+                for query in index_queries:
+                    cursor.execute(query)
+                conn.commit()
+                logger.info("主資料庫索引初始化完成")
+                
+            # 2. 為自選號資料庫建立複合索引
+            # 首先確保自選號資料庫和表格已存在
+            self._ensure_custom_db_exists()
+            with self.get_connection('custom') as conn:
+                cursor = conn.cursor()
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_custom_numbers_lookup ON custom_numbers(lottery_type, created_time DESC);")
+                conn.commit()
+                logger.info("自選號資料庫索引初始化完成")
+                
+        except Exception as e:
+            logger.exception(f"初始化資料庫索引失敗: {str(e)}")
     
     @contextmanager
     def get_connection(self, db_type='main'):
@@ -1042,8 +1075,8 @@ class BaseLotterySavedScreen(Screen):
             
             if scroll_view:
                 content_height_before = saved_list.height
-                viewport_height = scroll_view.height
-                current_absolute_scroll = (1 - scroll_view.scroll_y) * max(0, content_height_before - viewport_height)
+                # 定位到新分頁起點（扣除舊加載指示器高度後的舊資料底部）
+                current_absolute_scroll = max(0, content_height_before - dp(60))
             
             # 移除舊的載入指示器
             self._remove_load_more_indicator()
@@ -1348,6 +1381,9 @@ class BasePaginationMixin:
         finally:
             self.is_loading_more = False
             self._hide_loading_indicator()
+            # 載入完成並恢復滾動位置後，主動安排一次追加底部檢查，避免因連續快速滾動或 race condition 導致卡在底部不加載
+            if hasattr(self, '_check_load_more_after_load'):
+                Clock.schedule_once(lambda dt: self._check_load_more_after_load(), 0.25)
     
     def _update_result_list(self):
         """更新結果列表 - 子類必須實現"""
@@ -1537,7 +1573,7 @@ class BaseScrollMixin:
             return
         
         # 檢查是否接近底部（在到達底部前就開始載入）
-        content_layout = getattr(self.ids, 'results_layout', None) or getattr(self.ids, 'duplicate_list', None) or getattr(self.ids, 'detail_list', None)
+        content_layout = getattr(self.ids, 'results_layout', None) or getattr(self.ids, 'duplicate_list', None) or getattr(self.ids, 'detail_list', None) or getattr(self.ids, 'result_list', None)
         if content_layout:
             content_height = content_layout.height
             viewport_height = scroll_view.height
@@ -1557,7 +1593,7 @@ class BaseScrollMixin:
             return
         
         # 檢查是否接近底部（在到達底部前就開始載入）
-        content_layout = getattr(self.ids, 'results_layout', None) or getattr(self.ids, 'duplicate_list', None) or getattr(self.ids, 'detail_list', None)
+        content_layout = getattr(self.ids, 'results_layout', None) or getattr(self.ids, 'duplicate_list', None) or getattr(self.ids, 'detail_list', None) or getattr(self.ids, 'result_list', None)
         if content_layout:
             content_height = content_layout.height
             viewport_height = scroll_view.height
@@ -1588,12 +1624,32 @@ class BaseScrollMixin:
         self.is_scrolling = False
         logger.debug(f"{self.__class__.__name__} 確保排序功能可用")
 
+    def _scroll_to_new_data_start(self, previous_height):
+        """將滾動位置定位到新載入資料的起點（對齊到新分頁的第一筆資料頂端）"""
+        try:
+            # 舊資料的高度是 previous_height - 指示器高度 (dp(60))
+            indicator_height = dp(60)
+            target_absolute_scroll = max(0, previous_height - indicator_height)
+            logger.debug(f"{self.__class__.__name__} 定位新分頁起點: 載入前高度 {previous_height}, 目標滾動 {target_absolute_scroll}")
+            self._restore_scroll_position_absolute(target_absolute_scroll)
+        except Exception as e:
+            logger.exception(f"{self.__class__.__name__} 定位新分頁起點錯誤: {str(e)}")
+
+    def _check_load_more_after_load(self):
+        """加載完成並恢復位置後的追加底部檢查，避免因連續快速滾動或 race condition 導致卡在底部不加載"""
+        try:
+            scroll_view = self._get_scroll_view()
+            if scroll_view:
+                self._check_load_more_immediate(scroll_view)
+        except Exception as e:
+            logger.exception(f"{self.__class__.__name__} 加載後追加檢查錯誤: {str(e)}")
+
     def _restore_scroll_position_absolute(self, target_absolute_scroll):
         """恢復到指定的絕對滾動位置"""
         try:
             scroll_view = self._get_scroll_view()
             if scroll_view:
-                content_layout = getattr(self.ids, 'results_layout', None) or getattr(self.ids, 'duplicate_list', None) or getattr(self.ids, 'detail_list', None)
+                content_layout = getattr(self.ids, 'results_layout', None) or getattr(self.ids, 'duplicate_list', None) or getattr(self.ids, 'detail_list', None) or getattr(self.ids, 'result_list', None)
                 if content_layout:
                     content_height = content_layout.height
                     viewport_height = scroll_view.height

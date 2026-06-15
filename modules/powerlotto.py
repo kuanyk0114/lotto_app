@@ -815,17 +815,7 @@ class PowerLottoResultScreen(BaseAdvancedResultScreen):
     def _append_to_result_list(self, new_records):
         """追加新記錄到結果列表"""
         try:
-            # 保存當前滾動的絕對位置
-            scroll_view = self.ids.scroll_view
-            if hasattr(self.ids, 'scroll_view'):
-                # 計算當前滾動的絕對像素位置
-                current_content_height = self.ids.result_list.height
-                current_viewport_height = scroll_view.height
-                current_absolute_scroll = (1 - scroll_view.scroll_y) * max(0, current_content_height - current_viewport_height)
-                
-                logger.debug(f"載入前 - 內容高度: {current_content_height}, 絕對滾動位置: {current_absolute_scroll}")
-            else:
-                current_absolute_scroll = 0
+            current_content_height = self.ids.result_list.height
             
             # 移除舊的載入指示器
             self._remove_load_more_indicator()
@@ -838,8 +828,8 @@ class PowerLottoResultScreen(BaseAdvancedResultScreen):
             # 重新添加載入指示器
             self._add_load_more_indicator()
             
-            # 恢復滾動位置（延遲執行確保UI更新完成）
-            Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.1)
+            # 定位至新分頁的起點
+            Clock.schedule_once(lambda dt: self._scroll_to_new_data_start(current_content_height), 0.1)
             
         except Exception as e:
             logger.exception(f"追加結果錯誤: {str(e)}")
@@ -1462,11 +1452,7 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
             if self.manager.current != self.name:
                 return
                 
-            # 保存當前滾動位置
-            scroll_view = self.ids.scroll_view
             content_height_before = self.ids.duplicate_list.height
-            viewport_height = scroll_view.height
-            current_absolute_scroll = (1 - scroll_view.scroll_y) * max(0, content_height_before - viewport_height)
             
             # 移除舊的載入指示器
             self._remove_load_more_indicator()
@@ -1479,8 +1465,8 @@ class PowerLottoDuplicateScreen(BaseAdvancedResultScreen):
             # 重新添加載入指示器
             self._add_load_more_indicator()
             
-            # 恢復滾動位置
-            Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.1)
+            # 定位至新分頁的起點
+            Clock.schedule_once(lambda dt: self._scroll_to_new_data_start(content_height_before), 0.1)
             logger.debug(f"威力彩重複六碼同步追加記錄完成，共追加 {len(new_records)} 筆")
             
         except Exception as e:
@@ -1709,11 +1695,7 @@ class PowerLottoDuplicateDetailScreen(BaseAdvancedResultScreen):
     def _append_to_result_list(self, new_records):
         """追加新記錄到結果列表 - 實現基類抽象方法"""
         try:
-            # 保存當前滾動位置
-            scroll_view = self.ids.scroll_view
             content_height_before = self.ids.detail_list.height
-            viewport_height = scroll_view.height
-            current_absolute_scroll = (1 - scroll_view.scroll_y) * max(0, content_height_before - viewport_height)
             
             # 移除舊的載入指示器
             self._remove_load_more_indicator()
@@ -1726,8 +1708,8 @@ class PowerLottoDuplicateDetailScreen(BaseAdvancedResultScreen):
             # 重新添加載入指示器
             self._add_load_more_indicator()
             
-            # 恢復滾動位置
-            Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.1)
+            # 定位至新分頁的起點
+            Clock.schedule_once(lambda dt: self._scroll_to_new_data_start(content_height_before), 0.1)
             
         except Exception as e:
             logger.exception(f"威力彩重複記錄詳情追加記錄錯誤: {str(e)}")
@@ -2355,17 +2337,7 @@ class PowerLottoResultScreen(BaseAdvancedResultScreen):
     def _append_to_result_list(self, new_records):
         """追加新記錄到結果列表 - 實現基類抽象方法"""
         try:
-            # 保存當前滾動的絕對位置
-            scroll_view = self.ids.scroll_view
-            if hasattr(self.ids, 'scroll_view'):
-                # 計算當前滾動的絕對像素位置
-                current_content_height = self.ids.results_layout.height
-                current_viewport_height = scroll_view.height
-                current_absolute_scroll = (1 - scroll_view.scroll_y) * max(0, current_content_height - current_viewport_height)
-                
-                logger.debug(f"威力彩載入前 - 內容高度: {current_content_height}, 絕對滾動位置: {current_absolute_scroll}")
-            else:
-                current_absolute_scroll = 0
+            current_content_height = self.ids.results_layout.height
             
             # 移除舊的載入指示器
             self._remove_load_more_indicator()
@@ -2378,8 +2350,8 @@ class PowerLottoResultScreen(BaseAdvancedResultScreen):
             # 重新添加載入指示器
             self._add_load_more_indicator()
             
-            # 恢復滾動位置（延遲執行確保UI更新完成）
-            Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.1)
+            # 定位至新分頁的起點
+            Clock.schedule_once(lambda dt: self._scroll_to_new_data_start(current_content_height), 0.1)
             
         except Exception as e:
             traceback.print_exc()
@@ -2780,16 +2752,7 @@ class PowerLottoWinningDetailsScreen(BaseAdvancedResultScreen):
     def _append_to_result_list(self, new_records):
         """追加新記錄到結果列表 - 實現基類抽象方法"""
         try:
-            # 保存當前滾動的絕對位置
-            if hasattr(self.ids, 'scroll_view'):
-                scroll_view = self.ids.scroll_view
-                current_content_height = self.ids.results_layout.height
-                current_viewport_height = scroll_view.height
-                current_absolute_scroll = (1 - scroll_view.scroll_y) * max(0, current_content_height - current_viewport_height)
-                
-                logger.debug(f"威力彩載入前 - 內容高度: {current_content_height}, 絕對滾動位置: {current_absolute_scroll}")
-            else:
-                current_absolute_scroll = 0
+            current_content_height = self.ids.results_layout.height
             
             # 移除舊的載入指示器
             self._remove_load_more_indicator()
@@ -2803,8 +2766,8 @@ class PowerLottoWinningDetailsScreen(BaseAdvancedResultScreen):
             # 重新添加載入指示器
             self._add_load_more_indicator()
             
-            # 恢復滾動位置（延遲執行確保UI更新完成）
-            Clock.schedule_once(lambda dt: self._restore_scroll_position_absolute(current_absolute_scroll), 0.1)
+            # 定位至新分頁的起點
+            Clock.schedule_once(lambda dt: self._scroll_to_new_data_start(current_content_height), 0.1)
             
         except Exception as e:
             traceback.print_exc()
