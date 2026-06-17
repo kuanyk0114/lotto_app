@@ -2300,23 +2300,83 @@ class GestureScreenManager(ScreenManager):
                     is_valid_swipe = True
                     
                 if is_valid_swipe:
-                    self.handle_edge_swipe()
+                    self.handle_edge_swipe(start_y)
                 return True
                 
         return super().on_touch_up(touch)
         
-    def handle_edge_swipe(self):
-        logger.info(f"GestureScreenManager: 檢測到邊緣滑動手勢，當前頁面: {self.current}")
-        if self.current == 'lottery_type':
-            # 主畫面：詢問是否結束程式
+    def handle_edge_swipe(self, start_y):
+        is_upper = start_y >= self.height * 0.5
+        
+        logger.info(f"GestureScreenManager: 檢測到邊緣滑動手勢，當前頁面: {self.current}, 起始Y: {start_y}, 區域: {'上半部' if is_upper else '下半部'}")
+        
+        from kivy.app import App
+        
+        if not is_upper:
+            # 下半部：直接結束程式，跳回 Android 桌面
+            logger.info("GestureScreenManager: 下半部滑動，直接關閉程式")
+            App.get_running_app().stop()
+            return
+            
+        # 上半部：依據畫面層級執行特定行為
+        curr = self.current
+        
+        # 第二層：選號查詢與儲存號碼頁面
+        category_b = {
+            'power_query', 'biglotto', 'biglotto_saved', 'lotto539_query', 'lotto539_saved',
+            'lotto3star', 'lotto3star_saved', 'lotto4star', 'lotto4star_saved', 'power_saved',
+            '3star_query', '4star_query', 'big_query'
+        }
+        # 第三層：選號查詢結果頁面
+        category_c = {
+            'power_result', 'biglotto_results', 'lotto539_result', 'lotto3star_results', 'lotto4star_results'
+        }
+        # 自選號中獎詳情頁面
+        category_d = {
+            'power_winning_details', 'biglotto_winning_details', 'lotto539_winning_details',
+            'lotto3star_winning_details', 'lotto4star_winning_details'
+        }
+        # 重複號碼查詢結果頁面 (第五層)
+        category_e = {
+            'power_duplicate', 'biglotto_repeated_numbers', 'lotto539_duplicate',
+            'lotto3star_repeated_numbers', 'lotto4star_repeated_numbers'
+        }
+        # 重複號碼查詢詳情頁面 (第六層)
+        category_f = {
+            'power_duplicate_detail', 'biglotto_duplicate_detail', 'lotto539_duplicate_detail',
+            'lotto3star_duplicate_detail', 'lotto4star_duplicate_detail'
+        }
+        
+        if curr == 'lottery_type':
+            # 1. 在主畫面：出現確認結束程式詢問框
             ExitConfirmPopup().open()
+            
+        elif curr in category_b:
+            # 2. 在選號查詢頁面：跳回主畫面並出現確認結束程式詢問框
+            self.current = 'lottery_type'
+            ExitConfirmPopup().open()
+            
+        elif curr in category_c:
+            # 3. 在選號查詢結果頁面：跳回主畫面並出現確認結束程式詢問框
+            self.current = 'lottery_type'
+            ExitConfirmPopup().open()
+            
+        elif curr in category_d:
+            # 4. 在自選號中獎詳情頁面：直接跳回主畫面 (不彈窗)
+            self.current = 'lottery_type'
+            
+        elif curr in category_e:
+            # 5. 在重複號碼查詢結果頁面：出現確認結束程式詢問框 (不跳轉)
+            ExitConfirmPopup().open()
+            
+        elif curr in category_f:
+            # 6. 在重複號碼查詢詳情頁面：跳回主畫面並出現確認結束程式詢問框
+            self.current = 'lottery_type'
+            ExitConfirmPopup().open()
+            
         else:
-            # 子畫面：執行回上一頁
-            current_screen = self.current_screen
-            if hasattr(current_screen, 'go_back'):
-                current_screen.go_back()
-            else:
-                self.current = 'lottery_type'
+            # 其他頁面預設行為：回主畫面
+            self.current = 'lottery_type'
 
 class YuanbaoBackground(Widget):
     """用 Canvas 繪製金元寶與閃爍粒子的背景 Widget"""
