@@ -2244,52 +2244,63 @@ import random
 from math import sin
 
 class GestureScreenManager(ScreenManager):
-    """支援 Android 邊緣滑動手勢的 ScreenManager"""
+    """支援 Android 邊緣滑動手勢的 ScreenManager（並支援桌面端窄視窗模擬測試）"""
     def on_touch_down(self, touch):
         from kivy.utils import platform
-        if platform == 'android':
-            from kivy.core.window import Window
+        # 僅在 Android 平台，或桌面開發環境處於手機模擬尺寸（寬度 < 500dp）時啟用，方便測試且不影響桌面操作
+        is_mobile_sim = self.width < dp(500)
+        if platform == 'android' or is_mobile_sim:
             edge_width = dp(30)
+            is_edge = False
             if touch.x <= edge_width:
                 touch.ud['swipe_edge'] = 'left'
-                touch.ud['swipe_start_x'] = touch.x
-                touch.ud['swipe_start_y'] = touch.y
-                touch.ud['swipe_start_time'] = time.time()
-            elif touch.x >= Window.width - edge_width:
+                is_edge = True
+            elif touch.x >= self.width - edge_width:
                 touch.ud['swipe_edge'] = 'right'
+                is_edge = True
+                
+            if is_edge:
                 touch.ud['swipe_start_x'] = touch.x
                 touch.ud['swipe_start_y'] = touch.y
                 touch.ud['swipe_start_time'] = time.time()
+                # 使用 touch.grab 鎖定此觸碰事件，防止 ScrollView、Button 等子組件觸發滾動或點擊衝突
+                touch.grab(self)
+                return True
                 
         return super().on_touch_down(touch)
 
+    def on_touch_move(self, touch):
+        if touch.grab_current is self:
+            # 攔截移動事件，防止子組件（例如結果列表）滾動
+            return True
+        return super().on_touch_move(touch)
+
     def on_touch_up(self, touch):
-        from kivy.utils import platform
-        if platform == 'android' and 'swipe_edge' in touch.ud:
-            start_x = touch.ud['swipe_start_x']
-            start_y = touch.ud['swipe_start_y']
-            start_time = touch.ud['swipe_start_time']
-            edge = touch.ud['swipe_edge']
+        if touch.grab_current is self:
+            touch.ungrab(self)
             
-            dx = touch.x - start_x
-            dy = touch.y - start_y
-            dt = time.time() - start_time
+            start_x = touch.ud.get('swipe_start_x')
+            start_y = touch.ud.get('swipe_start_y')
+            start_time = touch.ud.get('swipe_start_time')
+            edge = touch.ud.get('swipe_edge')
             
-            # 觸發條件:
-            # 1. 橫向滑動距離大於 dp(80)
-            # 2. 縱向偏移小於 dp(50)
-            # 3. 滑動時間小於 0.5 秒
-            swipe_distance = dp(80)
-            max_vertical = dp(50)
-            
-            is_valid_swipe = False
-            if edge == 'left' and dx > swipe_distance and abs(dy) < max_vertical and dt < 0.5:
-                is_valid_swipe = True
-            elif edge == 'right' and dx < -swipe_distance and abs(dy) < max_vertical and dt < 0.5:
-                is_valid_swipe = True
+            if start_x is not None:
+                dx = touch.x - start_x
+                dy = touch.y - start_y
+                dt = time.time() - start_time
                 
-            if is_valid_swipe:
-                self.handle_edge_swipe()
+                # 觸發條件: 橫向滑動距離 > dp(80)，縱向偏移 < dp(50)，滑動時間 < 0.5 秒
+                swipe_distance = dp(80)
+                max_vertical = dp(50)
+                
+                is_valid_swipe = False
+                if edge == 'left' and dx > swipe_distance and abs(dy) < max_vertical and dt < 0.5:
+                    is_valid_swipe = True
+                elif edge == 'right' and dx < -swipe_distance and abs(dy) < max_vertical and dt < 0.5:
+                    is_valid_swipe = True
+                    
+                if is_valid_swipe:
+                    self.handle_edge_swipe()
                 return True
                 
         return super().on_touch_up(touch)
