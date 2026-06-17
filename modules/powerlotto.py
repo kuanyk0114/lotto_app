@@ -582,7 +582,7 @@ class PowerLottoResultScreen(BaseAdvancedResultScreen):
             self.sort_order = 'asc' if self.sort_order == 'DESC' else 'DESC'
         
             # 更新按鈕文字
-            self.ids.sort_btn.text = f'排序: {"升序" if self.sort_order == "asc" else "降序"}'
+            self.ids.sort_btn.text = "↑升序" if self.sort_order.lower() == "asc" else "↓降序"
         
             # 重新排序完整資料
             reverse_order = (self.sort_order == 'DESC')
@@ -640,7 +640,7 @@ class PowerLottoResultScreen(BaseAdvancedResultScreen):
         self.is_scrolling = False
         if hasattr(self.ids, 'sort_btn'):
             self.ids.sort_btn.disabled = False
-            self.ids.sort_btn.text = f'排序: {"升序" if self.sort_order == "asc" else "降序"}'
+            self.ids.sort_btn.text = "↑升序" if self.sort_order.lower() == "asc" else "↓降序"
         logger.debug("威力彩確保排序按鈕可用")
     
     def _ultimate_reset_scroll(self):

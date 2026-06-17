@@ -98,6 +98,11 @@
         Rectangle:
             pos: self.pos
             size: self.size
+            
+    YuanbaoBackground:
+        size_hint: None, None
+        size: root.size
+        pos: root.pos
     
     BoxLayout:
         orientation: 'vertical'
@@ -251,9 +256,9 @@
 
 <SortButton@Button>:
     # 統一排序按鈕
-    text: '排序: 降序' if root.sort_order == 'DESC' else '排序: 升序'
+    text: '↓降序' if root.sort_order.upper() == 'DESC' else '↑升序'
     font_name: 'ChineseFont'
-    font_size: dp(14)
+    font_size: dp(12)
     size_hint: None, None
     size: dp(100), dp(40)
     disabled: root.is_scrolling if hasattr(root, 'is_scrolling') else False

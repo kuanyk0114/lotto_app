@@ -506,7 +506,7 @@ class Lotto539ResultScreen(BaseAdvancedResultScreen):
         
             # 更新按鈕文字
             if hasattr(self.ids, 'sort_btn'):
-                self.ids.sort_btn.text = f'排序: {"升序" if self.sort_order == "ASC" else "降序"}'
+                self.ids.sort_btn.text = "↑升序" if self.sort_order.upper() == "ASC" else "↓降序"
         
             # 重新排序完整資料
             reverse_order = (self.sort_order == 'DESC')
@@ -873,7 +873,7 @@ class Lotto539ResultScreen(BaseAdvancedResultScreen):
         self.is_scrolling = False
         if hasattr(self.ids, 'sort_btn'):
             self.ids.sort_btn.disabled = False
-            self.ids.sort_btn.text = f'排序: {"升序" if self.sort_order == "ASC" else "降序"}'
+            self.ids.sort_btn.text = "↑升序" if self.sort_order.upper() == "ASC" else "↓降序"
         logger.debug("今彩539確保排序按鈕可用")
 
 
@@ -1260,7 +1260,7 @@ class Lotto539WinningDetailsScreen(Screen, BaseScrollMixin):
         
             # 更新按鈕文字
             if hasattr(self.ids, 'sort_btn'):
-                self.ids.sort_btn.text = f'排序: {"升序" if self.sort_order == "ASC" else "降序"}'
+                self.ids.sort_btn.text = "↑升序" if self.sort_order.upper() == "ASC" else "↓降序"
         
             # 重新排序完整資料
             reverse_order = (self.sort_order == 'DESC')
@@ -1468,7 +1468,7 @@ class Lotto539WinningDetailsScreen(Screen, BaseScrollMixin):
         self.is_scrolling = False
         if hasattr(self.ids, 'sort_btn'):
             self.ids.sort_btn.disabled = False
-            self.ids.sort_btn.text = f'排序: {"升序" if self.sort_order == "ASC" else "降序"}'
+            self.ids.sort_btn.text = "↑升序" if self.sort_order.upper() == "ASC" else "↓降序"
             logger.debug(f"今彩539中獎詳情排序按鈕已啟用: {not self.ids.sort_btn.disabled}")
         else:
             logger.debug("今彩539中獎詳情找不到sort_btn，無法啟用")

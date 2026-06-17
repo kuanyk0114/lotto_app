@@ -149,7 +149,8 @@ class LotteryApp(App):
                 self._kv_loaded = True
         
             # 初始化屏幕管理器
-            sm = ScreenManager()
+            from modules.common import GestureScreenManager
+            sm = GestureScreenManager()
             self._register_screens(sm)
         
             # 加載威力彩歷史數據

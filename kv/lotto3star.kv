@@ -287,8 +287,9 @@
                 halign: 'center'
             Button:
                 id: sort_btn
-                text: '排序: ' + ('降序' if root.sort_order == 'DESC' else '升序')
+                text: '↓降序' if root.sort_order.upper() == 'DESC' else '↑升序'
                 font_name: 'ChineseFont'
+                font_size: dp(12)
                 size_hint_x: 0.2
                 on_press: root.toggle_sort_order()
         
@@ -615,8 +616,9 @@
                 halign: 'center'
             Button:
                 id: sort_btn
-                text: '排序: ' + ('降序' if root.sort_order == 'DESC' else '升序')
+                text: '↓降序' if root.sort_order.upper() == 'DESC' else '↑升序'
                 font_name: 'ChineseFont'
+                font_size: dp(12)
                 size_hint_x: 0.2
                 on_press: root.toggle_sort_order()
         

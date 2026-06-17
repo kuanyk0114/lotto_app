@@ -1733,7 +1733,7 @@ class BaseSortMixin:
             
             # 更新按鈕文字
             if hasattr(self.ids, 'sort_btn'):
-                self.ids.sort_btn.text = f'排序: {"升序" if self.sort_order == "ASC" else "降序"}'
+                self.ids.sort_btn.text = "↑升序" if self.sort_order.upper() == "ASC" else "↓降序"
             
             # 重新排序完整資料
             reverse_order = (self.sort_order == 'DESC')
@@ -2182,3 +2182,235 @@ def get_store_url():
         return IOS_STORE_URL
     else:
         return DEFAULT_STORE_URL
+
+
+class ExitConfirmPopup(Popup):
+    """結束程式確認彈窗"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.title = '確認結束'
+        self.title_font = 'ChineseFont'
+        self.size_hint = (0.8, 0.28)
+        self.auto_dismiss = True
+        
+        content = BoxLayout(orientation='vertical', spacing=dp(10), padding=dp(15))
+        
+        # 提示文字
+        label = Label(
+            text='您確定要結束「好運自己選」嗎？',
+            font_name='ChineseFont',
+            font_size=dp(15),
+            halign='center',
+            valign='middle',
+            size_hint_y=0.6
+        )
+        content.add_widget(label)
+        
+        # 按鈕佈局
+        btn_layout = BoxLayout(orientation='horizontal', spacing=dp(15), size_hint_y=0.4)
+        
+        yes_btn = Button(
+            text='確定',
+            font_name='ChineseFont',
+            font_size=dp(14),
+            background_color=get_color_from_hex('#D32F2F'), # 紅色
+            background_normal=''
+        )
+        yes_btn.bind(on_release=self.exit_app)
+        
+        no_btn = Button(
+            text='取消',
+            font_name='ChineseFont',
+            font_size=dp(14),
+            background_color=get_color_from_hex('#4CAF50'), # 綠色
+            background_normal=''
+        )
+        no_btn.bind(on_release=self.dismiss)
+        
+        btn_layout.add_widget(yes_btn)
+        btn_layout.add_widget(no_btn)
+        content.add_widget(btn_layout)
+        
+        self.content = content
+        
+    def exit_app(self, instance):
+        self.dismiss()
+        from kivy.app import App
+        App.get_running_app().stop()
+
+from kivy.uix.screenmanager import ScreenManager
+import time
+import random
+from math import sin
+
+class GestureScreenManager(ScreenManager):
+    """支援 Android 邊緣滑動手勢的 ScreenManager"""
+    def on_touch_down(self, touch):
+        from kivy.utils import platform
+        if platform == 'android':
+            from kivy.core.window import Window
+            edge_width = dp(30)
+            if touch.x <= edge_width:
+                touch.ud['swipe_edge'] = 'left'
+                touch.ud['swipe_start_x'] = touch.x
+                touch.ud['swipe_start_y'] = touch.y
+                touch.ud['swipe_start_time'] = time.time()
+            elif touch.x >= Window.width - edge_width:
+                touch.ud['swipe_edge'] = 'right'
+                touch.ud['swipe_start_x'] = touch.x
+                touch.ud['swipe_start_y'] = touch.y
+                touch.ud['swipe_start_time'] = time.time()
+                
+        return super().on_touch_down(touch)
+
+    def on_touch_up(self, touch):
+        from kivy.utils import platform
+        if platform == 'android' and 'swipe_edge' in touch.ud:
+            start_x = touch.ud['swipe_start_x']
+            start_y = touch.ud['swipe_start_y']
+            start_time = touch.ud['swipe_start_time']
+            edge = touch.ud['swipe_edge']
+            
+            dx = touch.x - start_x
+            dy = touch.y - start_y
+            dt = time.time() - start_time
+            
+            # 觸發條件:
+            # 1. 橫向滑動距離大於 dp(80)
+            # 2. 縱向偏移小於 dp(50)
+            # 3. 滑動時間小於 0.5 秒
+            swipe_distance = dp(80)
+            max_vertical = dp(50)
+            
+            is_valid_swipe = False
+            if edge == 'left' and dx > swipe_distance and abs(dy) < max_vertical and dt < 0.5:
+                is_valid_swipe = True
+            elif edge == 'right' and dx < -swipe_distance and abs(dy) < max_vertical and dt < 0.5:
+                is_valid_swipe = True
+                
+            if is_valid_swipe:
+                self.handle_edge_swipe()
+                return True
+                
+        return super().on_touch_up(touch)
+        
+    def handle_edge_swipe(self):
+        logger.info(f"GestureScreenManager: 檢測到邊緣滑動手勢，當前頁面: {self.current}")
+        if self.current == 'lottery_type':
+            # 主畫面：詢問是否結束程式
+            ExitConfirmPopup().open()
+        else:
+            # 子畫面：執行回上一頁
+            current_screen = self.current_screen
+            if hasattr(current_screen, 'go_back'):
+                current_screen.go_back()
+            else:
+                self.current = 'lottery_type'
+
+class YuanbaoBackground(Widget):
+    """用 Canvas 繪製金元寶與閃爍粒子的背景 Widget"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.particles = []
+        self.animation_event = None
+        self.init_particles()
+        self.bind(size=self.draw_canvas, pos=self.draw_canvas)
+        self.animation_event = Clock.schedule_interval(self.update_particles, 1.0 / 30.0) # 30 FPS
+        
+    def init_particles(self):
+        self.particles = []
+        for _ in range(15):
+            x_ratio = random.random()
+            y_ratio = random.random()
+            size = dp(random.randint(6, 14))
+            speed = random.uniform(2.0, 5.0)
+            phase = random.uniform(0.0, 6.28)
+            is_cross = random.choice([True, False])
+            base_alpha = random.uniform(0.3, 0.8)
+            
+            self.particles.append({
+                'x_ratio': x_ratio,
+                'y_ratio': y_ratio,
+                'size': size,
+                'speed': speed,
+                'phase': phase,
+                'is_cross': is_cross,
+                'base_alpha': base_alpha,
+                'color_instr': None,
+                'draw_instr': None,
+                'draw_instr2': None
+            })
+            
+    def draw_canvas(self, *args):
+        self.canvas.before.clear()
+        
+        with self.canvas.before:
+            w, h = self.size
+            x, y = self.pos
+            
+            # 大元寶：中下方
+            self.draw_ingot(x + w * 0.5, y + h * 0.28, dp(1.8))
+            
+            # 小元寶 1：左上角
+            self.draw_ingot(x + w * 0.18, y + h * 0.82, dp(0.8))
+            
+            # 小元寶 2：右下角
+            self.draw_ingot(x + w * 0.82, y + h * 0.16, dp(0.9))
+            
+            # 小元寶 3：左中偏下
+            self.draw_ingot(x + w * 0.15, y + h * 0.42, dp(0.7))
+            
+            # 繪製閃光粒子
+            for p in self.particles:
+                px = x + p['x_ratio'] * w
+                py = y + p['y_ratio'] * h
+                
+                p['color_instr'] = Color(1.0, 0.9, 0.4, 0.0)
+                
+                if p['is_cross']:
+                    half = p['size'] / 2.0
+                    from kivy.graphics import Line
+                    p['draw_instr'] = Line(points=[px - half, py, px + half, py], width=dp(1.2))
+                    p['draw_instr2'] = Line(points=[px, py - half, px, py + half], width=dp(1.2))
+                else:
+                    p['draw_instr'] = Ellipse(pos=(px - p['size']/2, py - p['size']/2), size=(p['size'], p['size']))
+                    p['draw_instr2'] = None
+
+    def draw_ingot(self, cx, cy, s):
+        """
+        繪製一個金元寶
+        cx, cy: 中心點
+        s: 縮放係數 (scale)
+        """
+        # 1. 繪製底部外殼 (暗金色)
+        Color(0.85, 0.65, 0.0, 0.65)
+        Ellipse(pos=(cx - 35*s, cy - 20*s), size=(70*s, 35*s))
+        
+        # 2. 繪製左、右耳/翅膀 (中金色)
+        Color(0.95, 0.76, 0.0, 0.7)
+        Ellipse(pos=(cx - 52*s, cy - 6*s), size=(38*s, 24*s))
+        Ellipse(pos=(cx + 14*s, cy - 6*s), size=(38*s, 24*s))
+        
+        # 3. 繪製中間的金面 (亮金色)
+        Color(1.0, 0.85, 0.1, 0.75)
+        Ellipse(pos=(cx - 24*s, cy - 10*s), size=(48*s, 22*s))
+        
+        # 4. 頂部金球 (超亮金黃色)
+        Color(1.0, 0.93, 0.3, 0.85)
+        Ellipse(pos=(cx - 14*s, cy - 2*s), size=(28*s, 22*s))
+        
+        # 5. 白色高光
+        Color(1.0, 1.0, 1.0, 0.5)
+        Ellipse(pos=(cx - 7*s, cy + 8*s), size=(10*s, 5*s))
+
+    def update_particles(self, dt):
+        for p in self.particles:
+            if p['color_instr'] is not None:
+                p['phase'] += dt * p['speed']
+                alpha = ((sin(p['phase']) + 1.0) / 2.0) * p['base_alpha']
+                p['color_instr'].rgba = (1.0, 0.92, 0.45, alpha)
+                
+    def on_parent(self, instance, value):
+        if value is None and self.animation_event:
+            Clock.unschedule(self.animation_event)
+            self.animation_event = None

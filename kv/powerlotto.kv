@@ -220,7 +220,8 @@
             Button:
                 id: sort_btn
                 font_name: 'ChineseFont'
-                text: '排序: ' + ('降序' if root.sort_order == 'DESC' else '升序')
+                font_size: dp(12)
+                text: '↓降序' if root.sort_order.upper() == 'DESC' else '↑升序'
                 size_hint_x: 0.2
                 on_press: root.toggle_sort_order()  # 綁定切換排序方法
         
@@ -629,7 +630,8 @@
             Button:
                 id: sort_btn
                 font_name: 'ChineseFont'
-                text: '排序: ' + ('降序' if root.sort_order == 'DESC' else '升序')
+                font_size: dp(12)
+                text: '↓降序' if root.sort_order.upper() == 'DESC' else '↑升序'
                 size_hint_x: 0.2
                 on_press: root.toggle_sort_order()
         
