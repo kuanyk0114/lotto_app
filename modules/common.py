@@ -539,6 +539,8 @@ class BaseLotteryQueryScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.db_manager = DatabaseManager()
+        self.loading_popup = None
+
     def go_back(self):
         """返回主畫面"""
         self.manager.current = 'lottery_type'
@@ -720,6 +722,18 @@ class BaseLotterySavedScreen(Screen):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.db_manager = DatabaseManager()
+        
+        # 分頁相關屬性
+        self.page_size = 20  # 每頁顯示20筆自選號
+        self.current_page = 0
+        self.all_results = []  # 完整的自選號列表
+        self.displayed_results = []  # 當前顯示的自選號
+        self.has_more_data = False
+        self.is_loading_more = False
+        self.is_scrolling = False
+        self._scroll_events_disabled = False
+
     def go_back(self):
         """返回對應的查詢頁面"""
         if hasattr(self, 'back_to_query'):
@@ -735,16 +749,6 @@ class BaseLotterySavedScreen(Screen):
             screen_name = query_screen_names.get(self.lottery_type)
             if screen_name:
                 self.manager.current = screen_name
-
-        # 分頁相關屬性
-        self.page_size = 20  # 每頁顯示20筆自選號
-        self.current_page = 0
-        self.all_results = []  # 完整的自選號列表
-        self.displayed_results = []  # 當前顯示的自選號
-        self.has_more_data = False
-        self.is_loading_more = False
-        self.is_scrolling = False
-        self._scroll_events_disabled = False
     
     @property
     def lottery_type(self):
