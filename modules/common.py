@@ -539,8 +539,10 @@ class BaseLotteryQueryScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.db_manager = DatabaseManager()
-        self.loading_popup = None
-        
+    def go_back(self):
+        """返回主畫面"""
+        self.manager.current = 'lottery_type'
+
     # 抽象屬性，子類必須實作
     @property
     def lottery_type(self):
@@ -718,8 +720,22 @@ class BaseLotterySavedScreen(Screen):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.db_manager = DatabaseManager()
-        
+    def go_back(self):
+        """返回對應的查詢頁面"""
+        if hasattr(self, 'back_to_query'):
+            self.back_to_query()
+        else:
+            query_screen_names = {
+                'power': 'power_query',
+                'big': 'biglotto',
+                '539': 'lotto539_query',
+                '3star': 'lotto3star',
+                '4star': 'lotto4star'
+            }
+            screen_name = query_screen_names.get(self.lottery_type)
+            if screen_name:
+                self.manager.current = screen_name
+
         # 分頁相關屬性
         self.page_size = 20  # 每頁顯示20筆自選號
         self.current_page = 0
@@ -1185,6 +1201,10 @@ class LotteryTypeScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         Clock.schedule_once(self._init_buttons, 0.5)
+        
+    def go_back(self):
+        """主畫面返回操作，彈出確認結束詢問框"""
+        ExitConfirmPopup().open()
     
     def _init_buttons(self, dt):
         """初始化按鈕狀態"""
@@ -1892,6 +1912,41 @@ class BaseAdvancedResultScreen(Screen, BasePaginationMixin, BaseScrollMixin,
         super().__init__(**kwargs)
         # 初始化資料庫路徑
         self.db_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'lotto_history.db')
+        
+    def go_back(self):
+        """返回對應的查詢頁面或上級頁面"""
+        if hasattr(self, 'back_to_duplicate'):
+            self.back_to_duplicate()
+            return
+        if hasattr(self, 'back_to_query'):
+            self.back_to_query()
+            return
+            
+        # 根據頁面名稱推斷
+        name = self.name
+        if '_duplicate_detail' in name:
+            target = name.replace('_duplicate_detail', '_duplicate')
+            if self.manager.has_screen(target):
+                self.manager.current = target
+                return
+            alt_target = name.replace('_duplicate_detail', '_repeated_numbers')
+            if self.manager.has_screen(alt_target):
+                self.manager.current = alt_target
+                return
+                
+        prefix = name.split('_')[0]
+        if prefix == 'biglotto':
+            self.manager.current = 'biglotto'
+        elif prefix == 'power':
+            self.manager.current = 'power_query'
+        elif prefix == 'lotto539':
+            self.manager.current = 'lotto539_query'
+        elif prefix == 'lotto3star' or prefix == '3star':
+            self.manager.current = 'lotto3star'
+        elif prefix == 'lotto4star' or prefix == '4star':
+            self.manager.current = 'lotto4star'
+        else:
+            self.manager.current = 'lottery_type'
     
     def on_pre_enter(self):
         """進入屏幕前的初始化"""
@@ -2305,78 +2360,45 @@ class GestureScreenManager(ScreenManager):
                 
         return super().on_touch_up(touch)
         
-    def handle_edge_swipe(self, start_y):
-        is_upper = start_y >= self.height * 0.5
+    def handle_edge_swipe(self, start_y=None):
+        logger.info(f"GestureScreenManager: 處理返回操作，當前頁面: {self.current}")
         
-        logger.info(f"GestureScreenManager: 檢測到邊緣滑動手勢，當前頁面: {self.current}, 起始Y: {start_y}, 區域: {'上半部' if is_upper else '下半部'}")
-        
-        from kivy.app import App
-        
-        if not is_upper:
-            # 下半部：直接結束程式，跳回 Android 桌面
-            logger.info("GestureScreenManager: 下半部滑動，直接關閉程式")
-            App.get_running_app().stop()
+        curr_screen = self.current_screen
+        if not curr_screen:
             return
             
-        # 上半部：依據畫面層級執行特定行為
-        curr = self.current
-        
-        # 第二層：選號查詢與儲存號碼頁面
-        category_b = {
-            'power_query', 'biglotto', 'biglotto_saved', 'lotto539_query', 'lotto539_saved',
-            'lotto3star', 'lotto3star_saved', 'lotto4star', 'lotto4star_saved', 'power_saved',
-            '3star_query', '4star_query', 'big_query'
-        }
-        # 第三層：選號查詢結果頁面
-        category_c = {
-            'power_result', 'biglotto_results', 'lotto539_result', 'lotto3star_results', 'lotto4star_results'
-        }
-        # 自選號中獎詳情頁面
-        category_d = {
-            'power_winning_details', 'biglotto_winning_details', 'lotto539_winning_details',
-            'lotto3star_winning_details', 'lotto4star_winning_details'
-        }
-        # 重複號碼查詢結果頁面 (第五層)
-        category_e = {
-            'power_duplicate', 'biglotto_repeated_numbers', 'lotto539_duplicate',
-            'lotto3star_repeated_numbers', 'lotto4star_repeated_numbers'
-        }
-        # 重複號碼查詢詳情頁面 (第六層)
-        category_f = {
-            'power_duplicate_detail', 'biglotto_duplicate_detail', 'lotto539_duplicate_detail',
-            'lotto3star_duplicate_detail', 'lotto4star_duplicate_detail'
-        }
-        
-        if curr == 'lottery_type':
-            # 1. 在主畫面：出現確認結束程式詢問框
-            ExitConfirmPopup().open()
-            
-        elif curr in category_b:
-            # 2. 在選號查詢頁面：跳回主畫面並出現確認結束程式詢問框
+        # 1. 優先調用當前畫面的 go_back 方法
+        if hasattr(curr_screen, 'go_back'):
+            try:
+                curr_screen.go_back()
+                return
+            except Exception as e:
+                logger.error(f"調用 {curr_screen.__class__.__name__}.go_back 失敗: {e}")
+                
+        # 2. 其次調用 back_to_duplicate 方法
+        if hasattr(curr_screen, 'back_to_duplicate'):
+            try:
+                curr_screen.back_to_duplicate()
+                return
+            except Exception as e:
+                logger.error(f"調用 {curr_screen.__class__.__name__}.back_to_duplicate 失敗: {e}")
+                
+        # 3. 再次調用 back_to_query 方法
+        if hasattr(curr_screen, 'back_to_query'):
+            try:
+                curr_screen.back_to_query()
+                return
+            except Exception as e:
+                logger.error(f"調用 {curr_screen.__class__.__name__}.back_to_query 失敗: {e}")
+                
+        # 4. 保底行為：非主畫面一律回主畫面，主畫面一律彈出 ExitConfirmPopup
+        if self.current != 'lottery_type':
             self.current = 'lottery_type'
-            ExitConfirmPopup().open()
-            
-        elif curr in category_c:
-            # 3. 在選號查詢結果頁面：跳回主畫面並出現確認結束程式詢問框
-            self.current = 'lottery_type'
-            ExitConfirmPopup().open()
-            
-        elif curr in category_d:
-            # 4. 在自選號中獎詳情頁面：直接跳回主畫面 (不彈窗)
-            self.current = 'lottery_type'
-            
-        elif curr in category_e:
-            # 5. 在重複號碼查詢結果頁面：出現確認結束程式詢問框 (不跳轉)
-            ExitConfirmPopup().open()
-            
-        elif curr in category_f:
-            # 6. 在重複號碼查詢詳情頁面：跳回主畫面並出現確認結束程式詢問框
-            self.current = 'lottery_type'
-            ExitConfirmPopup().open()
-            
         else:
-            # 其他頁面預設行為：回主畫面
-            self.current = 'lottery_type'
+            try:
+                ExitConfirmPopup().open()
+            except Exception as e:
+                logger.error(f"開啟 ExitConfirmPopup 失敗: {e}")
 
 class YuanbaoBackground(Widget):
     """用 Canvas 繪製金元寶與閃爍粒子的背景 Widget"""

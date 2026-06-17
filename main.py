@@ -156,6 +156,9 @@ class LotteryApp(App):
             # 加載威力彩歷史數據
             self.power_history = self._load_power_history()
         
+            # 綁定 Android 返回鍵 / Esc 鍵 (Keycode 27)
+            Window.bind(on_keyboard=self.on_keyboard)
+        
             # 預加載資源
             Clock.schedule_once(self._preload_resources, 0.5)
         
@@ -314,10 +317,7 @@ class LotteryApp(App):
         screens = [
             ('lottery_type', LotteryTypeScreen),
             ('power_query', PowerLottoQueryScreen),
-            ('big_query', BigLottoQueryScreen),
             ('lotto539_query', Lotto539QueryScreen),
-            ('3star_query', Lotto3StarQueryScreen),
-            ('4star_query', Lotto4StarQueryScreen),
             ('power_result', PowerLottoResultScreen),
             ('power_saved', PowerLottoSavedScreen),
             ('power_duplicate', PowerLottoDuplicateScreen),
@@ -414,6 +414,27 @@ class LotteryApp(App):
             font_name='ChineseFont'
         ))
         return layout
+
+    def on_keyboard(self, window, key, scancode, codepoint, modifier):
+        """處理 Android 返回鍵 & Esc 鍵"""
+        if key == 27:
+            logging.info("LotteryApp: 檢測到返回鍵 (Keycode 27)")
+            # 1. 檢查是否有 ModalView (如 Popup 等彈出視窗) 開著
+            from kivy.uix.modalview import ModalView
+            for child in list(Window.children):
+                if isinstance(child, ModalView):
+                    logging.info(f"LotteryApp: 發現開啟中的彈窗 {child.__class__.__name__}")
+                    # 如果彈窗的 auto_dismiss 為 True，則關閉它
+                    if hasattr(child, 'auto_dismiss') and child.auto_dismiss:
+                        child.dismiss()
+                        logging.info("LotteryApp: 已關閉該彈窗")
+                    return True  # 消費事件，不繼續向後傳遞
+                    
+            # 2. 如果沒有彈窗，調用 ScreenManager 的返回處理邏輯
+            if self.root and hasattr(self.root, 'handle_edge_swipe'):
+                self.root.handle_edge_swipe()
+                return True  # 消費事件，阻止 Kivy 默認退出 App
+        return False
 
     def on_start(self):
         """Called when Kivy starts running and window is displayed."""
