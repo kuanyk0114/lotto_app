@@ -2304,6 +2304,10 @@ from math import sin
 
 class GestureScreenManager(ScreenManager):
     """支援 Android 邊緣滑動手勢的 ScreenManager（並支援桌面端窄視窗模擬測試）"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.last_transition_time = 0
+
     def on_touch_down(self, touch):
         from kivy.utils import platform
         # 僅在 Android 平台，或桌面開發環境處於手機模擬尺寸（寬度 < 500dp）時啟用，方便測試且不影響桌面操作
@@ -2365,6 +2369,14 @@ class GestureScreenManager(ScreenManager):
         return super().on_touch_up(touch)
         
     def handle_edge_swipe(self, start_y=None):
+        import time
+        now = time.time()
+        # 0.5 秒冷卻時間，防止 Android 系統手勢與自定義手勢重複觸發
+        if hasattr(self, 'last_transition_time') and (now - self.last_transition_time < 0.5):
+            logger.info("GestureScreenManager: 忽略重複的返回操作 (冷卻中)")
+            return
+        self.last_transition_time = now
+
         logger.info(f"GestureScreenManager: 處理返回操作，當前頁面: {self.current}")
         
         curr_screen = self.current_screen
