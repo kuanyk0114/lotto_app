@@ -9,6 +9,9 @@ package.name = goodluck
 # (str) Package domain (needed for android packaging)
 package.domain = com.lottotaiwan
 
+# (str) Icon of the application
+icon.filename = %(source.dir)s/images/goodluckicon512.png
+
 # (str) Source code where the main.py lives
 source.dir = .
 

@@ -115,7 +115,7 @@ def setup_logging():
         logging.info("目前為發佈模式，僅錯誤日誌會寫入 error.log。")
 
 class LotteryApp(App):
-    icon = 'images/logo.png'
+    icon = 'images/goodluckicon512.png'
     # 彩券類型配置 (英文標識: 顯示名稱)
     LOTTERY_TYPES = {
         'power': '威力彩',
