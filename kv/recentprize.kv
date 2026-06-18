@@ -1,0 +1,130 @@
+<SpinnerOption>:
+    font_name: 'ChineseFont'
+    font_size: dp(14)
+
+<RecentPrizeRow@BoxLayout>:
+    orientation: 'vertical'
+    size_hint_y: None
+    height: dp(75)
+    spacing: dp(4)
+    padding: (dp(10), 0)
+
+    BoxLayout:
+        size_hint_y: None
+        height: dp(20)
+        spacing: dp(10)
+        Label:
+            id: period_label
+            text: ''
+            font_name: 'ChineseFont'
+            font_size: '12sp'
+            size_hint_x: None
+            width: dp(140)
+            halign: 'left'
+            valign: 'middle'
+            text_size: (self.width, self.height)
+            color: get_color_from_hex('#BBBBBB')
+        Label:
+            id: date_label
+            text: ''
+            font_name: 'ChineseFont'
+            font_size: '12sp'
+            size_hint_x: 1
+            halign: 'left'
+            valign: 'middle'
+            text_size: (self.width, self.height)
+            color: get_color_from_hex('#BBBBBB')
+            
+    BoxLayout:
+        size_hint_y: None
+        height: dp(40)
+        GridLayout:
+            id: balls_layout
+            rows: 1
+            spacing: dp(5)
+            size_hint_x: None
+            width: self.minimum_width
+            
+    Widget:
+        size_hint_y: None
+        height: dp(1)
+        canvas:
+            Color:
+                rgba: get_color_from_hex('#222222')
+            Line:
+                points: [self.x, self.y, self.right, self.y]
+                width: 0.5
+
+<RecentPrizeScreen>:
+    name: 'recent_prize'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(10)
+        spacing: dp(5)
+        
+        # 頂部導航與下拉選單
+        BoxLayout:
+            size_hint_y: None
+            height: dp(40)
+            spacing: dp(5)
+            
+            Button:
+                text: '返回'
+                font_name: 'ChineseFont'
+                size_hint_x: 0.2
+                on_press: root.go_back()
+            
+            Label:
+                id: title_label
+                text: '威力彩 近30期獎號'
+                font_name: 'ChineseFont'
+                font_size: dp(18)
+                bold: True
+                size_hint_x: 0.5
+                color: get_color_from_hex('#FFC107')
+                halign: 'center'
+                valign: 'middle'
+                text_size: (self.width, self.height)
+            
+            Spinner:
+                id: type_spinner
+                text: '威力彩'
+                values: ['威力彩', '大樂透', '今彩539', '3星彩', '4星彩']
+                font_name: 'ChineseFont'
+                font_size: dp(14)
+                size_hint_x: 0.3
+                background_color: get_color_from_hex('#1565C0')
+                color: (1, 1, 1, 1)
+                on_text: root.on_lottery_type_change(self.text)
+                padding: [0, 0, dp(20), 0]
+                
+                AnchorLayout:
+                    anchor_x: 'right'
+                    anchor_y: 'center'
+                    pos: self.parent.pos
+                    size: self.parent.size
+                    padding: [0, 0, dp(8), 0]
+                    Label:
+                        text: '▼'
+                        font_name: 'ChineseFont'
+                        font_size: dp(14)
+                        color: (1, 1, 1, 0.8)
+                        size_hint: (None, None)
+                        size: (dp(16), dp(16))
+                
+        # 獎號列表捲動區域
+        ScrollView:
+            id: scroll_view
+            do_scroll_x: False
+            do_scroll_y: True
+            BoxLayout:
+                id: results_layout
+                orientation: 'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: dp(8)
+                padding: (0, dp(10))
+
+        # 廣告/引流版位
+        AdBannerArea:
+            id: ad_banner

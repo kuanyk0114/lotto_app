@@ -57,6 +57,7 @@ try:
     print("[BOOTSTRAP] 10. Importing common modules")
     sys.stdout.flush()
     from modules.common import LotteryTypeScreen  # 新增這行
+    from modules.recentprize import RecentPrizeScreen
 
     print("[BOOTSTRAP] All imports completed successfully!")
     sys.stdout.flush()
@@ -175,7 +176,8 @@ class LotteryApp(App):
             'kv/biglotto.kv',
             'kv/lotto539.kv',
             'kv/lotto3star.kv',
-            'kv/lotto4star.kv'
+            'kv/lotto4star.kv',
+            'kv/recentprize.kv'
         ]
         
         for kv_file in kv_files:
@@ -255,7 +257,8 @@ class LotteryApp(App):
             'big.png', 'big_pressed.png',
             'lotto539.png', 'lotto539_pressed.png',
             'lotto3star.png', 'lotto3star_pressed.png',
-            'lotto4star.png', 'lotto4star_pressed.png'
+            'lotto4star.png', 'lotto4star_pressed.png',
+            'recent.png', 'recent_pressed.png'
         ]
         
         for img in required_images:
@@ -316,6 +319,7 @@ class LotteryApp(App):
         """動態註冊所有屏幕"""
         screens = [
             ('lottery_type', LotteryTypeScreen),
+            ('recent_prize', RecentPrizeScreen),
             ('power_query', PowerLottoQueryScreen),
             ('lotto539_query', Lotto539QueryScreen),
             ('power_result', PowerLottoResultScreen),

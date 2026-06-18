@@ -1185,7 +1185,7 @@ class BaseLotterySavedScreen(Screen):
 
 class LotteryTypeScreen(Screen):
     """主菜單界面"""
-    btn_states = DictProperty({'power':1, 'big':1, '539':1, '3star':1, '4star':1})
+    btn_states = DictProperty({'power':1, 'big':1, '539':1, '3star':1, '4star':1, 'recent':1})
     
     def on_touch_down(self, touch):
         if self.manager and self.manager.current != self.name:
