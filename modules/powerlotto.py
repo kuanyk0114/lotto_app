@@ -1160,7 +1160,7 @@ class PowerLottoSavedScreen(BaseLotterySavedScreen):
            
 
     def on_saved_number_touch(self, instance, touch, index):
-        if instance.collide_point(*touch.pos) and touch.button == 'left':
+        if instance.collide_point(*touch.pos) and (getattr(touch, 'button', None) in (None, 'left')):
             if touch.is_double_tap:
                 # 雙擊事件 - 直接提取
                 self.use_saved_number(index)
