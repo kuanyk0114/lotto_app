@@ -1,10 +1,8 @@
 import sqlite3
 import os
 import shutil
+import sys
 from datetime import datetime
-
-db_path = r"d:\我的專案\台彩程式\lotto_app\data\lotto_history.db"
-backup_path = db_path + ".bak"
 
 def normalize_date(date_str):
     if not date_str:
@@ -37,16 +35,27 @@ def normalize_date(date_str):
     return date_str
 
 def main():
-    if not os.path.exists(db_path):
-        print(f"Error: Database file not found at {db_path}")
+    # 預設資料庫路徑
+    target_db = r"d:\我的專案\台彩程式\lotto_app\data\lotto_history.db"
+    
+    # 若有命令列參數傳入，則使用參數指定的路徑
+    if len(sys.argv) > 1:
+        target_db = sys.argv[1]
+        
+    if not os.path.exists(target_db):
+        print(f"Error: Database file not found at {target_db}")
         return
         
+    # 產生備份路徑 (.db.bak)
+    backup_db = target_db + ".bak"
+    
     # 1. 備份資料庫
-    print(f"Creating backup of database to {backup_path}...")
-    shutil.copy2(db_path, backup_path)
+    print(f"Target Database: {target_db}")
+    print(f"Creating backup of database to {backup_db}...")
+    shutil.copy2(target_db, backup_db)
     print("Backup created successfully.")
     
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(target_db)
     c = conn.cursor()
     
     tables = ['power_lotto', 'big_lotto', 'lotto_539', 'lotto_3star', 'lotto_4star']
