@@ -84,7 +84,8 @@ class DatabaseManager:
                     "CREATE INDEX IF NOT EXISTS idx_biglotto_date ON big_lotto(date);",
                     "CREATE INDEX IF NOT EXISTS idx_lotto539_date ON lotto_539(date);",
                     "CREATE INDEX IF NOT EXISTS idx_lotto3star_date ON lotto_3star(date);",
-                    "CREATE INDEX IF NOT EXISTS idx_lotto4star_date ON lotto_4star(date);"
+                    "CREATE INDEX IF NOT EXISTS idx_lotto4star_date ON lotto_4star(date);",
+                    "CREATE INDEX IF NOT EXISTS idx_powerlotto_date ON power_lotto(date);"
                 ]
                 for query in index_queries:
                     cursor.execute(query)

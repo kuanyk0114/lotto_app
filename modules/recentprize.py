@@ -4,7 +4,6 @@ from kivy.clock import Clock
 from kivy.properties import StringProperty
 from kivy.metrics import dp
 from modules.common import DatabaseManager, ResultBall
-from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
@@ -58,21 +57,11 @@ class RecentPrizeScreen(Screen):
             if cfg['has_special']:
                 cols.append("special_num")
                 
-            query = f"SELECT issue, date, {', '.join(cols)} FROM {cfg['table']}"
+            query = f"SELECT issue, date, {', '.join(cols)} FROM {cfg['table']} ORDER BY date DESC, issue DESC LIMIT 30"
             rows = self.db_manager.execute_query(query)
             
-            # 日期解析輔助函數
-            def parse_date(date_str):
-                for fmt in ('%Y/%m/%d', '%Y-%m-%d'):
-                    try:
-                        return datetime.strptime(date_str.strip(), fmt)
-                    except ValueError:
-                        pass
-                logger.warning(f"無法解析的日期格式: {date_str}")
-                return datetime.min
-                
             # 處理與過濾資料
-            processed = []
+            recent_prizes = []
             for r in rows:
                 issue = r[0]
                 date_str = r[1]
@@ -82,19 +71,12 @@ class RecentPrizeScreen(Screen):
                 # 過濾掉 None 值
                 nums = [n for n in nums if n is not None]
                 
-                processed.append({
+                recent_prizes.append({
                     'issue': issue,
                     'date_str': date_str,
-                    'date_obj': parse_date(date_str),
                     'nums': sorted(nums) if cfg['sorted'] else nums,
                     'special': special
                 })
-                
-            # 依日期降序、期別降序排列
-            processed.sort(key=lambda x: (x['date_obj'], x['issue']), reverse=True)
-            
-            # 取近 30 期
-            recent_prizes = processed[:30]
             
             if not recent_prizes:
                 # 顯示查無資料的標籤
