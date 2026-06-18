@@ -11,7 +11,7 @@ try:
     from kivy.core.window import Window
     from kivy.core.text import LabelBase
     from kivy.clock import Clock
-    from kivy.utils import get_color_from_hex
+    from kivy.utils import get_color_from_hex, platform
     from kivy.config import Config
     from kivy.properties import DictProperty
     
@@ -70,8 +70,9 @@ except BaseException as e:
 
 DEBUG = True  # 全域 DEBUG 變數，控制日誌輸出 True測試 False發佈
 
-# 通用設定（適用所有平台）
-Config.set('input', 'mouse', 'mouse,disable_multitouch')  # 關閉觸摸標記
+# 通用設定
+if platform not in ('android', 'ios'):
+    Config.set('input', 'mouse', 'mouse,disable_multitouch')  # 關閉觸摸標記（僅電腦端生效，防止 Android 下拉選單衝突）
 Config.set('graphics', 'show_cursor', '1')               # 顯示系統默認鼠標（僅電腦有效）
 
 def setup_logging():
