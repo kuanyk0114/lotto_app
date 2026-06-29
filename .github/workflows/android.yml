@@ -40,16 +40,14 @@ jobs:
         path: |
           ~/.buildozer
           .buildozer
-        key: ${{ runner.os }}-buildozer-v2-${{ hashFiles('buildozer.spec') }}
+        key: ${{ runner.os }}-buildozer-v3-${{ hashFiles('buildozer.spec') }}
         restore-keys: |
-          ${{ runner.os }}-buildozer-v2-
+          ${{ runner.os }}-buildozer-v3-
 
     - name: Build Android APK
       run: |
-        # Accept licenses automatically
-        yes | buildozer android debug
+        buildozer android debug
       env:
-        # Prevent interactive prompts
         BUILDOZER_ALLOW_KIVY_NEW_DESIGN: 1
 
     - name: Upload APK artifact
@@ -57,3 +55,13 @@ jobs:
       with:
         name: GoodLuck-LotteryApp-Debug
         path: bin/*.apk
+
+    - name: Upload build logs on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: Build-Logs-Failure
+        path: |
+          .buildozer/android/platform/build-*/build.log
+          ~/.buildozer/build.log
+        continue-on-error: true
