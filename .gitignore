@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+
+# Kivy / Buildozer
+.buildozer/
+bin/
+
+# Temporary / Scratch
+scratch/
+.idea/
+.vscode/
+*.log

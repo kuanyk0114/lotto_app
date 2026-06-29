@@ -1221,6 +1221,9 @@ class LotteryTypeScreen(Screen):
     
     def show_privacy_policy(self):
         """顯示隱私權政策及免責聲明彈窗"""
+        import webbrowser
+        import re
+
         content = BoxLayout(orientation='vertical', spacing=dp(10), padding=dp(15))
         
         # 標題
@@ -1230,7 +1233,7 @@ class LotteryTypeScreen(Screen):
             font_size=dp(18),
             bold=True,
             size_hint_y=None,
-            height=dp(40),  # 增加標題高度
+            height=dp(40),
             color=(1, 1, 1, 1),
             halign='center',
             valign='middle'
@@ -1239,73 +1242,98 @@ class LotteryTypeScreen(Screen):
         
         # 滾動區域
         scroll = ScrollView()
-        scroll_content = BoxLayout(orientation='vertical', spacing=dp(15), size_hint_y=None, padding=(dp(15), dp(10)))
+        scroll_content = BoxLayout(orientation='vertical', spacing=dp(8), size_hint_y=None, padding=(dp(15), dp(10)))
         scroll_content.bind(minimum_height=scroll_content.setter('height'))
         
-        # 內容結構
-        content_sections = [
-            {
-                'title': '免責聲明：',
-                'items': [
-                    '本APP使用之彩券歷史資料來源自台灣彩券官網公開資訊，僅供參考用途，台灣彩券公司不保證資料正確性，實際開獎結果以台灣彩券公司公告為準。',
-                    '本APP與台灣彩券公司無關，所提供分析結果僅供參考。',
-                    '使用本APP即表示您同意上述條款。如有疑問請聯繫開發者。'
-                ]
-            },
-            {
-                'title': '隱私權政策：',
-                'items': [
-                    '本APP不會收集任何個人資料。',
-                    '所有選號記錄僅儲存在您的裝置本地。',
-                    '我們不會將您的使用資料傳送到外部伺服器。',
-                    '本APP僅讀取公開的彩券開獎資料。'
-                ]
-            }
-        ]
+        # 讀取 MD 檔案
+        md_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '隱私權政策及免責聲明', '服務條款與法律免責聲明隱私權政策.md'))
+        lines = []
+        if os.path.exists(md_path):
+            try:
+                with open(md_path, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+            except Exception as e:
+                logger.exception(f"讀取隱私權政策檔案失敗: {e}")
         
-        for section in content_sections:
-            # 添加區段標題
-            section_title = Label(
-                text=section['title'],
-                font_name='ChineseFont',
-                font_size=dp(16),
-                bold=True,
-                size_hint_y=None,
-                height=dp(35),
-                color=(1, 1, 0.5, 1),  # 淡黃色標題
-                halign='left',
-                valign='middle'
-            )
-            def update_title_text_size(instance, value):
-                instance.text_size = (instance.width - dp(30), None)
-            section_title.bind(width=update_title_text_size)
-            scroll_content.add_widget(section_title)
+        if not lines:
+            lines = ["暫無隱私權政策內容或檔案讀取失敗。"]
+
+        def on_ref_pressed(instance, ref):
+            try:
+                webbrowser.open(ref)
+            except Exception as e:
+                logger.exception(f"無法開啟連結 {ref}: {e}")
+
+        for line in lines:
+            text = line.strip()
+            if not text:
+                spacer = Widget(size_hint_y=None, height=dp(6))
+                scroll_content.add_widget(spacer)
+                continue
             
-            # 添加區段內容
-            for item in section['items']:
+            # 判斷標題層級
+            is_main_title = (text == "服務條款與法律免責聲明" or text == "[好運自己選] 隱私權政策" or ("隱私權政策" in text and "[" in text))
+            is_section_title = any(text.startswith(prefix) for prefix in ['一、', '二、', '三、', '四、', '五、', '六、', '七、'])
+            
+            # 處理 Markdown 轉 Kivy Markup
+            # 1. 處理連結 [text](url) -> [ref=url][color=3388ff][u]text[/u][/color][/ref]
+            link_pattern = r'\[([^\]]+)\]\(([^)]+)\)'
+            def replace_link(match):
+                l_text = match.group(1)
+                l_url = match.group(2)
+                return f"[ref={l_url}][color=3388ff][u]{l_text}[/u][/color][/ref]"
+            
+            formatted_text = re.sub(link_pattern, replace_link, text)
+            
+            # 2. 處理粗體 **text** -> [b]text[/b]
+            formatted_text = re.sub(r'\*\*(.*?)\*\*', r'[b]\1[/b]', formatted_text)
+            
+            # 3. 處理行內程式碼 `text` -> [b]text[/b]
+            formatted_text = re.sub(r'`(.*?)`', r'[b]\1[/b]', formatted_text)
+            
+            # 樣式設定
+            if is_main_title:
                 label = Label(
-                    text=item,
+                    text=formatted_text,
+                    font_name='ChineseFont',
+                    font_size=dp(16),
+                    bold=True,
+                    markup=True,
+                    halign='left',
+                    valign='middle',
+                    size_hint_y=None,
+                    color=(0.4, 0.8, 1, 1)
+                )
+            elif is_section_title:
+                label = Label(
+                    text=formatted_text,
+                    font_name='ChineseFont',
+                    font_size=dp(15),
+                    bold=True,
+                    markup=True,
+                    halign='left',
+                    valign='middle',
+                    size_hint_y=None,
+                    color=(1, 1, 0.5, 1)
+                )
+            else:
+                label = Label(
+                    text=formatted_text,
                     font_name='ChineseFont',
                     font_size=dp(14),
+                    markup=True,
                     halign='left',
                     valign='top',
                     size_hint_y=None,
-                    height=dp(80) if len(item) > 50 else dp(40),
-                    color=(1, 1, 1, 1)
+                    color=(0.9, 0.9, 0.9, 1)
                 )
-                # 設定文字自動換行
-                def update_text_size(instance, value):
-                    instance.text_size = (instance.width - dp(30), None)
-                label.bind(width=update_text_size)
-                scroll_content.add_widget(label)
             
-            # 添加區段間距
-            spacer = Label(
-                text='',
-                size_hint_y=None,
-                height=dp(10)
-            )
-            scroll_content.add_widget(spacer)
+            label.bind(on_ref_press=on_ref_pressed)
+            label.bind(texture_size=lambda instance, value: setattr(instance, 'height', value[1]))
+            def update_text_size(instance, value):
+                instance.text_size = (instance.width - dp(20), None)
+            label.bind(width=update_text_size)
+            scroll_content.add_widget(label)
         
         scroll.add_widget(scroll_content)
         content.add_widget(scroll)
@@ -1324,7 +1352,7 @@ class LotteryTypeScreen(Screen):
         popup = Popup(
             title='',
             content=content,
-            size_hint=(0.95, 0.85),  # 增加彈窗大小
+            size_hint=(0.95, 0.85),
             separator_height=0,
             background_color=(0.2, 0.2, 0.2, 1)
         )

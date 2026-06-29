@@ -16,7 +16,7 @@ icon.filename = %(source.dir)s/images/goodluckicon512.png
 source.dir = .
 
 # (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,ttf,json,db
+source.include_exts = py,png,jpg,kv,ttf,json,db,md,html
 
 # (list) List of exclusions using pattern matching
 #source.exclude_patterns = license,images/*_original.png
