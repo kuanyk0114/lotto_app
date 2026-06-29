@@ -18,6 +18,9 @@ source.dir = .
 # (list) Source files to include (let empty to include all the files)
 source.include_exts = py,png,jpg,kv,ttf,json,db,md,html
 
+# (list) List of directory to exclude (let empty to not exclude anything)
+source.exclude_dirs = doc, scratch, tests, venv, bin, .git, .github
+
 # (list) List of exclusions using pattern matching
 #source.exclude_patterns = license,images/*_original.png
 

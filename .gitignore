@@ -17,3 +17,4 @@ scratch/
 .idea/
 .vscode/
 *.log
+data/custom.db
