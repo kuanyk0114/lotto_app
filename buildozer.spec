@@ -84,6 +84,9 @@ android.ndk = 25b
 # This is required for clean automated builds.
 android.accept_sdk_license = True
 
+# (str) python-for-android git branch to use
+p4a.branch = v2024.01.21
+
 # (str) Android entry point, default is to use start.py of bootstrap
 #android.entrypoint = default_as_bootstrap
 
