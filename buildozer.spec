@@ -23,7 +23,7 @@ source.include_exts = py,png,jpg,kv,ttf,json,db,md,html
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy,sqlite3,openssl,requests
+requirements = python3,kivy,sqlite3,openssl
 
 # (str) Custom source folders for requirements
 # It may be useful when he need to add some python-for-android packaging
