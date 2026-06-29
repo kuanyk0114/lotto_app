@@ -1246,7 +1246,7 @@ class LotteryTypeScreen(Screen):
         scroll_content.bind(minimum_height=scroll_content.setter('height'))
         
         # 讀取 MD 檔案
-        md_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '隱私權政策及免責聲明', '服務條款與法律免責聲明隱私權政策.md'))
+        md_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'privacy', 'privacy_policy.md'))
         lines = []
         if os.path.exists(md_path):
             try:
