@@ -119,7 +119,7 @@ android.logcat_filters = *:S python:D
 
 # (list) The Android archs to build for.
 # Valid values are: armeabi-v7a, arm64-v8a, x86, x86_64
-android.archs = arm64-v8a, armeabi-v7a
+android.archs = arm64-v8a
 
 # (bool) Allow service to be ran in foreground
 #android.foreground_service = False

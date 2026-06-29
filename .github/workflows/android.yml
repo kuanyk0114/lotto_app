@@ -40,9 +40,9 @@ jobs:
         path: |
           ~/.buildozer
           .buildozer
-        key: ${{ runner.os }}-buildozer-v3-${{ hashFiles('buildozer.spec') }}
+        key: ${{ runner.os }}-buildozer-v4-${{ hashFiles('buildozer.spec') }}
         restore-keys: |
-          ${{ runner.os }}-buildozer-v3-
+          ${{ runner.os }}-buildozer-v4-
 
     - name: Build Android APK
       run: |
@@ -58,10 +58,11 @@ jobs:
 
     - name: Upload build logs on failure
       if: failure()
+      continue-on-error: true
       uses: actions/upload-artifact@v4
       with:
         name: Build-Logs-Failure
         path: |
-          .buildozer/android/platform/build-*/build.log
-          ~/.buildozer/build.log
-        continue-on-error: true
+          .buildozer/**/*.log
+          ~/.buildozer/**/*.log
+        if-no-files-found: ignore
