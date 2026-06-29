@@ -40,9 +40,9 @@ jobs:
         path: |
           ~/.buildozer
           .buildozer
-        key: ${{ runner.os }}-buildozer-v8-${{ hashFiles('buildozer.spec') }}
+        key: ${{ runner.os }}-buildozer-v9-${{ hashFiles('buildozer.spec') }}
         restore-keys: |
-          ${{ runner.os }}-buildozer-v8-
+          ${{ runner.os }}-buildozer-v9-
 
     - name: Install pure Python dependencies into app source
       run: |
@@ -53,6 +53,8 @@ jobs:
         buildozer -v android debug
       env:
         BUILDOZER_ALLOW_KIVY_NEW_DESIGN: 1
+        PIP_NO_BUILD_ISOLATION: "1"
+        USE_SDL2: "1"
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
