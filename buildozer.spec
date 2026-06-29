@@ -23,7 +23,7 @@ source.include_exts = py,png,jpg,kv,ttf,json,db,md,html
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy==2.3.1,sqlite3,openssl,requests,urllib3,certifi,idna,chardet
+requirements = python3,kivy,sqlite3,openssl,requests,urllib3,certifi,idna,chardet
 
 # (str) Custom source folders for requirements
 # It may be useful when he need to add some python-for-android packaging
@@ -53,7 +53,7 @@ fullscreen = 1
 android.permissions = INTERNET
 
 # (int) Target Android API, should be as high as possible.
-#android.api = 33
+android.api = 33
 
 # (int) Minimum API your APK will support.
 android.minapi = 21
@@ -62,7 +62,7 @@ android.minapi = 21
 #android.sdk = 33
 
 # (str) Android NDK version to use
-#android.ndk = 25b
+android.ndk = 25b
 
 # (bool) Use --private data directory (True, default) or --dir public directory (False)
 #android.private_storage = True

@@ -40,13 +40,13 @@ jobs:
         path: |
           ~/.buildozer
           .buildozer
-        key: ${{ runner.os }}-buildozer-v4-${{ hashFiles('buildozer.spec') }}
+        key: ${{ runner.os }}-buildozer-v5-${{ hashFiles('buildozer.spec') }}
         restore-keys: |
-          ${{ runner.os }}-buildozer-v4-
+          ${{ runner.os }}-buildozer-v5-
 
     - name: Build Android APK
       run: |
-        buildozer android debug
+        buildozer -v android debug
       env:
         BUILDOZER_ALLOW_KIVY_NEW_DESIGN: 1
 
@@ -63,6 +63,6 @@ jobs:
       with:
         name: Build-Logs-Failure
         path: |
-          .buildozer/**/*.log
-          ~/.buildozer/**/*.log
+          .buildozer/**/build.log
+          ~/.buildozer/**/build.log
         if-no-files-found: ignore
