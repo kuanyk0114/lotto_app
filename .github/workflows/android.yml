@@ -40,9 +40,9 @@ jobs:
         path: |
           ~/.buildozer
           .buildozer
-        key: ${{ runner.os }}-buildozer-v12-${{ hashFiles('buildozer.spec') }}
+        key: ${{ runner.os }}-buildozer-v13-${{ hashFiles('buildozer.spec') }}
         restore-keys: |
-          ${{ runner.os }}-buildozer-v12-
+          ${{ runner.os }}-buildozer-v13-
 
     - name: Install pure Python dependencies into app source
       run: |

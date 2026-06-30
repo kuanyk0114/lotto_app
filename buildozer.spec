@@ -16,7 +16,7 @@ icon.filename = %(source.dir)s/images/goodluckicon512.png
 source.dir = .
 
 # (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,ttf,json,db,md,html
+source.include_exts = py,png,jpg,kv,ttf,json,db,md,html,pem
 
 # (list) List of directory to exclude (let empty to not exclude anything)
 source.exclude_dirs = doc, scratch, tests, venv, bin, .git, .github
