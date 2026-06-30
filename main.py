@@ -18,6 +18,13 @@ try:
     print("[BOOTSTRAP] 2. Importing standard libraries")
     sys.stdout.flush()
     import os
+    try:
+        import certifi
+        os.environ['SSL_CERT_FILE'] = certifi.where()
+        os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
+        print(f"[BOOTSTRAP] SSL_CERT_FILE configured: {certifi.where()}")
+    except Exception as e:
+        print(f"[BOOTSTRAP] SSL_CERT_FILE setup failed: {e}")
     import csv
     import sqlite3
     import importlib.util

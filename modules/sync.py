@@ -19,7 +19,7 @@ def check_internet(timeout=3):
         requests.head("https://wyyiyuinfgbqbeykenin.supabase.co", timeout=timeout)
         return True
     except Exception as e:
-        logger.debug(f"Internet connection check failed: {e}")
+        logger.warning(f"Internet connection check failed: {e}")
         return False
 
 def calculate_sha256(data_bytes):
