@@ -14,15 +14,46 @@
             height: dp(90)  # 標題和說明文字高度
             
             # 主標題
-            Label:
-                text: '大樂透選號查詢'
-                font_name: 'ChineseFont'
-                font_size: dp(24)
-                bold: True
+            RelativeLayout:
                 size_hint_y: None
                 height: dp(35)
-                color: get_color_from_hex('#FFC107')
-                halign: 'center'
+                
+                Label:
+                    text: '大樂透選號查詢'
+                    font_name: 'ChineseFont'
+                    font_size: dp(24)
+                    bold: True
+                    size_hint: 1, 1
+                    color: get_color_from_hex('#FFC107')
+                    halign: 'center'
+                    valign: 'middle'
+                    text_size: self.size
+                
+                # 右側問號說明按鈕
+                Button:
+                    id: help_btn
+                    text: '?'
+                    font_name: 'ChineseFont'
+                    font_size: dp(16)
+                    bold: True
+                    color: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                    size_hint: None, None
+                    size: dp(28), dp(28)
+                    pos_hint: {'right': 1, 'center_y': 0.5}
+                    background_color: (0, 0, 0, 0)
+                    background_normal: ''
+                    on_release: root.show_operation_help()
+                    canvas.before:
+                        Color:
+                            rgba: (1, 0.757, 0.027, 0.15) if self.state == 'down' else (1, 0.757, 0.027, 0)
+                        Ellipse:
+                            pos: self.pos
+                            size: self.size
+                        Color:
+                            rgba: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                        Line:
+                            circle: (self.center_x, self.center_y, self.width / 2 - dp(1))
+                            width: dp(1.2)
             
             # 說明文字
             BoxLayout:

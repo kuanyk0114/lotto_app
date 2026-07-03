@@ -49,7 +49,8 @@ Local專案根目錄/
 │    └── msjhl.ttc
 ├── privacy/                     #隱私權政策及免責聲明、說明
 │    ├── privacy_policy.md       #隱私權政策及免責聲明
-│    └── Help.md                 #說明
+│    └── Help.md                 #APP簡介及操作說明
+│    └── Help-op.md              #操作說明
 └── data/
      ├── lotto_history.db			#台灣彩券歷史獎號SQLite資料庫
      │     └── Table
