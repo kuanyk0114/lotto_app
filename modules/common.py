@@ -2642,22 +2642,24 @@ class GestureScreenManager(ScreenManager):
         # 僅在 Android 平台，或桌面開發環境處於手機模擬尺寸（寬度 < 500dp）時啟用，方便測試且不影響桌面操作
         is_mobile_sim = self.width < dp(500)
         if platform == 'android' or is_mobile_sim:
-            edge_width = dp(30)
-            is_edge = False
-            if touch.x <= edge_width:
-                touch.ud['swipe_edge'] = 'left'
-                is_edge = True
-            elif touch.x >= self.width - edge_width:
-                touch.ud['swipe_edge'] = 'right'
-                is_edge = True
-                
-            if is_edge:
-                touch.ud['swipe_start_x'] = touch.x
-                touch.ud['swipe_start_y'] = touch.y
-                touch.ud['swipe_start_time'] = time.time()
-                # 使用 touch.grab 鎖定此觸碰事件，防止 ScrollView、Button 等子組件觸發滾動或點擊衝突
-                touch.grab(self)
-                return True
+            # 排除最上方標題列區域，避免與右上角問號按鈕或返回按鈕衝突
+            if touch.y < self.height - dp(60):
+                edge_width = dp(30)
+                is_edge = False
+                if touch.x <= edge_width:
+                    touch.ud['swipe_edge'] = 'left'
+                    is_edge = True
+                elif touch.x >= self.width - edge_width:
+                    touch.ud['swipe_edge'] = 'right'
+                    is_edge = True
+                    
+                if is_edge:
+                    touch.ud['swipe_start_x'] = touch.x
+                    touch.ud['swipe_start_y'] = touch.y
+                    touch.ud['swipe_start_time'] = time.time()
+                    # 使用 touch.grab 鎖定此觸碰事件，防止 ScrollView、Button 等子組件觸發滾動或點擊衝突
+                    touch.grab(self)
+                    return True
                 
         return super().on_touch_down(touch)
 
