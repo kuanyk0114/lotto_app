@@ -12,6 +12,9 @@ package.domain = com.lottotaiwan
 # (str) Icon of the application
 icon.filename = %(source.dir)s/images/goodluckicon512.png
 
+# (str) Presplash of the application
+presplash.filename = %(source.dir)s/images/goodluckicon512.png
+
 # (str) Source code where the main.py lives
 source.dir = .
 
@@ -120,8 +123,8 @@ android.logcat_filters = *:S python:D
 # (bool) Copy library instead of making a symbolic link
 #lib_link = False
 
-# (str) Title for the conceptual app loader (presplash)
-#android.presplash_color = #121212
+# (str) Presplash background color
+android.presplash_color = #121212
 
 # (list) The Android archs to build for.
 # Valid values are: armeabi-v7a, arm64-v8a, x86, x86_64
