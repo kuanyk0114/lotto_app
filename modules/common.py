@@ -1360,6 +1360,156 @@ class LotteryTypeScreen(Screen):
         close_button.bind(on_press=popup.dismiss)
         popup.open()
 
+    def show_help_popup(self):
+        """顯示 APP 簡介及操作說明彈窗"""
+        import webbrowser
+        import re
+
+        content = BoxLayout(orientation='vertical', spacing=dp(10), padding=dp(15))
+        
+        # 標題
+        title_label = Label(
+            text='APP簡介及操作說明',
+            font_name='ChineseFont',
+            font_size=dp(18),
+            bold=True,
+            size_hint_y=None,
+            height=dp(40),
+            color=(1, 1, 1, 1),
+            halign='center',
+            valign='middle'
+        )
+        content.add_widget(title_label)
+        
+        # 滾動區域
+        scroll = ScrollView()
+        scroll_content = BoxLayout(orientation='vertical', spacing=dp(8), size_hint_y=None, padding=(dp(15), dp(10)))
+        scroll_content.bind(minimum_height=scroll_content.setter('height'))
+        
+        # 讀取 MD 檔案
+        md_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'privacy', 'Help.md'))
+        lines = []
+        if os.path.exists(md_path):
+            try:
+                with open(md_path, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+            except Exception as e:
+                logger.exception(f"讀取說明文件失敗: {e}")
+        
+        if not lines:
+            lines = ["暫無說明文件內容或檔案讀取失敗。"]
+
+        def on_ref_pressed(instance, ref):
+            try:
+                webbrowser.open(ref)
+            except Exception as e:
+                logger.exception(f"無法開啟連結 {ref}: {e}")
+
+        for line in lines:
+            text = line.strip()
+            if not text:
+                spacer = Widget(size_hint_y=None, height=dp(6))
+                scroll_content.add_widget(spacer)
+                continue
+            
+            # 判斷標題層級
+            is_main_title = text.startswith('# ')
+            is_section_title = text.startswith('## ') or text.startswith('### ')
+            
+            # 清理標題標記
+            display_text = text
+            if is_main_title:
+                display_text = text[2:]
+            elif text.startswith('## '):
+                display_text = text[3:]
+            elif text.startswith('### '):
+                display_text = text[4:]
+            
+            # 處理 Markdown 轉 Kivy Markup
+            # 1. 處理連結 [text](url) -> [ref=url][color=3388ff][u]text[/u][/color][/ref]
+            link_pattern = r'\[([^\]]+)\]\(([^)]+)\)'
+            def replace_link(match):
+                l_text = match.group(1)
+                l_url = match.group(2)
+                return f"[ref={l_url}][color=3388ff][u]{l_text}[/u][/color][/ref]"
+            
+            formatted_text = re.sub(link_pattern, replace_link, display_text)
+            
+            # 2. 處理粗體 **text** -> [b]text[/b]
+            formatted_text = re.sub(r'\*\*(.*?)\*\*', r'[b]\1[/b]', formatted_text)
+            
+            # 3. 處理行內程式碼 `text` -> [b]text[/b]
+            formatted_text = re.sub(r'`(.*?)`', r'[b]\1[/b]', formatted_text)
+            
+            # 樣式設定
+            if is_main_title:
+                label = Label(
+                    text=formatted_text,
+                    font_name='ChineseFont',
+                    font_size=dp(17),
+                    bold=True,
+                    markup=True,
+                    halign='left',
+                    valign='middle',
+                    size_hint_y=None,
+                    color=(0.4, 0.8, 1, 1)
+                )
+            elif is_section_title:
+                label = Label(
+                    text=formatted_text,
+                    font_name='ChineseFont',
+                    font_size=dp(15),
+                    bold=True,
+                    markup=True,
+                    halign='left',
+                    valign='middle',
+                    size_hint_y=None,
+                    color=(1, 1, 0.5, 1)
+                )
+            else:
+                label = Label(
+                    text=formatted_text,
+                    font_name='ChineseFont',
+                    font_size=dp(14),
+                    markup=True,
+                    halign='left',
+                    valign='top',
+                    size_hint_y=None,
+                    color=(0.9, 0.9, 0.9, 1)
+                )
+            
+            label.bind(on_ref_press=on_ref_pressed)
+            label.bind(texture_size=lambda instance, value: setattr(instance, 'height', value[1]))
+            def update_text_size(instance, value):
+                instance.text_size = (instance.width - dp(20), None)
+            label.bind(width=update_text_size)
+            scroll_content.add_widget(label)
+        
+        scroll.add_widget(scroll_content)
+        content.add_widget(scroll)
+        
+        # 關閉按鈕
+        close_button = Button(
+            text='我已了解',
+            font_name='ChineseFont',
+            size_hint_y=None,
+            height=dp(50),
+            background_color=get_color_from_hex('#2196F3')
+        )
+        content.add_widget(close_button)
+        
+        # 創建彈窗
+        popup = Popup(
+            title='',
+            content=content,
+            size_hint=(0.95, 0.85),
+            separator_height=0,
+            background_color=(0.2, 0.2, 0.2, 1)
+        )
+        
+        close_button.bind(on_press=popup.dismiss)
+        popup.open()
+
 
 # ==================== 新增的共用基類 ====================
 

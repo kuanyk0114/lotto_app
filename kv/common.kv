@@ -160,24 +160,68 @@
         Widget:
             size_hint_y: 1
         
-        Label:
-            text: '版本 1.0'
-            font_name: 'ChineseFont'
-            font_size: dp(12)
-            color: get_color_from_hex('#888888')
+        RelativeLayout:
             size_hint_y: None
-            height: dp(20)
-        
-        # 隱私權政策及免責聲明按鈕
-        Button:
-            text: '隱私權政策及免責聲明'
-            font_name: 'ChineseFont'
-            font_size: dp(12)
-            color: get_color_from_hex('#CCCCCC')
-            background_color: (0, 0, 0, 0)  # 透明背景
-            size_hint_y: None
-            height: dp(30)
-            on_release: root.show_privacy_policy()
+            height: dp(50)
+            
+            # 問號說明按鈕 (靠左對齊，與上方彩種按鈕對齊)
+            Button:
+                id: help_btn
+                text: '?'
+                font_name: 'ChineseFont'
+                font_size: dp(18)
+                bold: True
+                color: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                size_hint: None, None
+                size: dp(32), dp(32)
+                pos_hint: {'x': 0, 'center_y': 0.5}
+                background_color: (0, 0, 0, 0)
+                background_normal: ''
+                on_release: root.show_help_popup()
+                canvas.before:
+                    Color:
+                        rgba: (1, 0.757, 0.027, 0.15) if self.state == 'down' else (1, 0.757, 0.027, 0)
+                    Ellipse:
+                        pos: self.pos
+                        size: self.size
+                    Color:
+                        rgba: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                    Line:
+                        circle: (self.center_x, self.center_y, self.width / 2 - dp(1))
+                        width: dp(1.5)
+            
+            # 版本與隱私權政策聲明 (置中對齊)
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint: None, 1
+                width: dp(200)
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                spacing: dp(2)
+                
+                Label:
+                    text: '版本 1.0'
+                    font_name: 'ChineseFont'
+                    font_size: dp(12)
+                    color: get_color_from_hex('#888888')
+                    size_hint_y: None
+                    height: dp(18)
+                    halign: 'center'
+                    valign: 'middle'
+                    text_size: self.size
+                
+                Button:
+                    text: '隱私權政策及免責聲明'
+                    font_name: 'ChineseFont'
+                    font_size: dp(12)
+                    color: get_color_from_hex('#CCCCCC')
+                    background_color: (0, 0, 0, 0)
+                    size_hint_y: None
+                    height: dp(22)
+                    halign: 'center'
+                    valign: 'middle'
+                    text_size: self.size
+                    on_release: root.show_privacy_policy()
+
 
         # 廣告/引流版位
         AdBannerArea:
