@@ -252,7 +252,10 @@
                 id: sort_btn
                 font_name: 'ChineseFont'
                 font_size: dp(12)
-                size_hint_x: 0.2
+                text: '↓降序' if root.sort_order.upper() == 'DESC' else '↑升序'
+                size_hint: None, None
+                size: dp(70), dp(32)
+                pos_hint: {'right': 1, 'center_y': 0.5}
                 on_press: root.toggle_sort_order_safe()
 
         # Selected numbers
