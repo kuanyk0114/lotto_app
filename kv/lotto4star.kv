@@ -66,10 +66,31 @@
                 size_hint_y: None
                 height: dp(35)
                 
-                # 左側自適應佔位以保持標題完美置中
-                Widget:
-                    size_hint_x: None
-                    width: dp(32)
+                # 左側返回按鈕 (替代原本的「回彩券選擇」)
+                Button:
+                    id: back_btn
+                    text: '<'
+                    font_name: 'ChineseFont'
+                    font_size: dp(16)
+                    bold: True
+                    color: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                    size_hint: None, None
+                    size: dp(32), dp(32)
+                    pos_hint: {'center_y': 0.5}
+                    background_color: (0, 0, 0, 0)
+                    background_normal: ''
+                    on_release: root.go_back()
+                    canvas.before:
+                        Color:
+                            rgba: (1, 0.757, 0.027, 0.15) if self.state == 'down' else (1, 0.757, 0.027, 0)
+                        Ellipse:
+                            pos: self.pos
+                            size: self.size
+                        Color:
+                            rgba: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                        Line:
+                            circle: (self.center_x, self.center_y, self.width / 2 - dp(1))
+                            width: dp(1.2)
                 
                 Label:
                     text: '四星彩選號查詢'
@@ -276,12 +297,7 @@
                 size_hint_y: None
                 height: dp(45)
                 
-                Button:
-                    text: '回彩券選擇'
-                    font_name: 'ChineseFont'
-                    font_size: dp(14)
-                    background_color: get_color_from_hex('#9C27B0')
-                    on_press: root.manager.current = 'lottery_type'
+
                 
                 Button:
                     text: '儲存自選號'
