@@ -508,7 +508,7 @@ class Lotto3StarResultsScreen(BaseAdvancedResultScreen):
             
             # 更新按鈕文字並重新啟用
             if hasattr(self.ids, 'sort_btn'):
-                self.ids.sort_btn.text = "↑升序" if self.sort_order.upper() == "ASC" else "↓降序"
+                self.ids.sort_btn.text = "▲" if self.sort_order.upper() == "ASC" else "▼"
                 self.ids.sort_btn.disabled = False
                 logger.debug(f"三星彩查詢結果排序按鈕已重新啟用，文字更新為: {self.ids.sort_btn.text}")
             
@@ -557,7 +557,7 @@ class Lotto3StarResultsScreen(BaseAdvancedResultScreen):
         # 確保排序按鈕初始狀態為啟用並更新文字
         if hasattr(self.ids, 'sort_btn'):
             self.ids.sort_btn.disabled = False
-            self.ids.sort_btn.text = "↑升序" if self.sort_order.upper() == "ASC" else "↓降序"
+            self.ids.sort_btn.text = "▲" if self.sort_order.upper() == "ASC" else "▼"
             logger.debug(f"三星彩查詢結果初始化排序按鈕: {self.ids.sort_btn.text}")
         
         # 保存查詢參數
@@ -1055,7 +1055,7 @@ class Lotto3StarResultsScreen(BaseAdvancedResultScreen):
         self.is_scrolling = False
         if hasattr(self.ids, 'sort_btn'):
             self.ids.sort_btn.disabled = False
-            self.ids.sort_btn.text = "↑升序" if self.sort_order.upper() == "ASC" else "↓降序"
+            self.ids.sort_btn.text = "▲" if self.sort_order.upper() == "ASC" else "▼"
             logger.debug(f"三星彩查詢結果排序按鈕已啟用: {not self.ids.sort_btn.disabled}")
         else:
             logger.debug("三星彩查詢結果找不到sort_btn，無法啟用")
@@ -2162,7 +2162,7 @@ class Lotto3StarWinningDetailsScreen(Screen, BaseScrollMixin):
             
             # 更新按鈕文字並重新啟用
             if hasattr(self.ids, 'sort_btn'):
-                self.ids.sort_btn.text = "↑升序" if self.sort_order.upper() == "ASC" else "↓降序"
+                self.ids.sort_btn.text = "▲" if self.sort_order.upper() == "ASC" else "▼"
                 self.ids.sort_btn.disabled = False
                 logger.debug(f"三星彩中獎詳情排序按鈕已重新啟用，文字更新為: {self.ids.sort_btn.text}")
             
@@ -2558,7 +2558,7 @@ class Lotto3StarWinningDetailsScreen(Screen, BaseScrollMixin):
         self.is_scrolling = False
         if hasattr(self.ids, 'sort_btn'):
             self.ids.sort_btn.disabled = False
-            self.ids.sort_btn.text = "↑升序" if self.sort_order.upper() == "ASC" else "↓降序"
+            self.ids.sort_btn.text = "▲" if self.sort_order.upper() == "ASC" else "▼"
             logger.debug(f"三星彩中獎詳情排序按鈕已啟用: {not self.ids.sort_btn.disabled}")
         else:
             logger.warning("三星彩中獎詳情找不到sort_btn，無法啟用")

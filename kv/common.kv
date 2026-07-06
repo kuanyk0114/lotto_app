@@ -306,14 +306,28 @@
 
 <SortButton@Button>:
     # 統一排序按鈕
-    text: '↓降序' if root.sort_order.upper() == 'DESC' else '↑升序'
+    text: '▼' if (hasattr(root, 'sort_order') and root.sort_order.upper() == 'DESC') else '▲'
     font_name: 'ChineseFont'
-    font_size: dp(12)
+    font_size: dp(14)
+    bold: True
+    color: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
     size_hint: None, None
-    size: dp(100), dp(40)
+    size: dp(32), dp(32)
     disabled: root.is_scrolling if hasattr(root, 'is_scrolling') else False
+    background_color: (0, 0, 0, 0)
+    background_normal: ''
     on_press: root.toggle_sort_order() if (hasattr(root, 'enable_sort') and root.enable_sort) else None
-    background_color: get_color_from_hex('#4CAF50') if not self.disabled else get_color_from_hex('#888888')
+    canvas.before:
+        Color:
+            rgba: (1, 0.757, 0.027, 0.15) if self.state == 'down' else (1, 0.757, 0.027, 0)
+        Ellipse:
+            pos: self.pos
+            size: self.size
+        Color:
+            rgba: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+        Line:
+            circle: (self.center_x, self.center_y, self.width / 2 - dp(1))
+            width: dp(1.2)
 
 <BaseResultScreen>:
     # 基礎結果頁面佈局
@@ -365,7 +379,7 @@
             SortButton:
                 id: sort_btn
                 size_hint: None, None
-                size: dp(70), dp(32)
+                size: dp(32), dp(32)
                 pos_hint: {'right': 1, 'center_y': 0.5}
         
         # 統計區域（子類可以覆寫）

@@ -363,13 +363,28 @@
             
             Button:
                 id: sort_btn
+                text: '▼' if root.sort_order.upper() == 'DESC' else '▲'
                 font_name: 'ChineseFont'
-                font_size: dp(12)
-                text: '↓降序' if root.sort_order.upper() == 'DESC' else '↑升序'
+                font_size: dp(14)
+                bold: True
+                color: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
                 size_hint: None, None
-                size: dp(70), dp(32)
+                size: dp(32), dp(32)
                 pos_hint: {'right': 1, 'center_y': 0.5}
+                background_color: (0, 0, 0, 0)
+                background_normal: ''
                 on_press: root.toggle_sort_order()
+                canvas.before:
+                    Color:
+                        rgba: (1, 0.757, 0.027, 0.15) if self.state == 'down' else (1, 0.757, 0.027, 0)
+                    Ellipse:
+                        pos: self.pos
+                        size: self.size
+                    Color:
+                        rgba: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                    Line:
+                        circle: (self.center_x, self.center_y, self.width / 2 - dp(1))
+                        width: dp(1.2)
         
         # Selected numbers - 比照今彩539的自選號顯示
         BoxLayout:
@@ -777,13 +792,28 @@
             
             Button:
                 id: sort_btn
+                text: '▼' if root.sort_order.upper() == 'DESC' else '▲'
                 font_name: 'ChineseFont'
-                font_size: dp(12)
-                text: '↓降序' if root.sort_order.upper() == 'DESC' else '↑升序'
+                font_size: dp(14)
+                bold: True
+                color: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
                 size_hint: None, None
-                size: dp(70), dp(32)
+                size: dp(32), dp(32)
                 pos_hint: {'right': 1, 'center_y': 0.5}
+                background_color: (0, 0, 0, 0)
+                background_normal: ''
                 on_press: root.toggle_sort_order()
+                canvas.before:
+                    Color:
+                        rgba: (1, 0.757, 0.027, 0.15) if self.state == 'down' else (1, 0.757, 0.027, 0)
+                    Ellipse:
+                        pos: self.pos
+                        size: self.size
+                    Color:
+                        rgba: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                    Line:
+                        circle: (self.center_x, self.center_y, self.width / 2 - dp(1))
+                        width: dp(1.2)
         
         # Selected numbers - 比照今彩539的自選號顯示
         BoxLayout:

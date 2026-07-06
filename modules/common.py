@@ -2086,7 +2086,7 @@ class BaseSortMixin:
             
             # 更新按鈕文字
             if hasattr(self.ids, 'sort_btn'):
-                self.ids.sort_btn.text = "↑升序" if self.sort_order.upper() == "ASC" else "↓降序"
+                self.ids.sort_btn.text = "▲" if self.sort_order.upper() == "ASC" else "▼"
             
             # 重新排序完整資料
             reverse_order = (self.sort_order == 'DESC')
