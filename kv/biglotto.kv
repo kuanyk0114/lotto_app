@@ -208,25 +208,48 @@
         spacing: dp(5)
 
         # Top bar
-        BoxLayout:
+        RelativeLayout:
             size_hint_y: None
-            height: dp(40)
+            height: dp(35)
+            
             Button:
-                text: '返回'
+                id: back_btn
+                text: '<'
                 font_name: 'ChineseFont'
-                size_hint_x: 0.2
-                on_press: root.go_back()
+                font_size: dp(16)
+                bold: True
+                color: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                size_hint: None, None
+                size: dp(32), dp(32)
+                pos_hint: {'x': 0, 'center_y': 0.5}
+                background_color: (0, 0, 0, 0)
+                background_normal: ''
+                on_release: root.go_back()
+                canvas.before:
+                    Color:
+                        rgba: (1, 0.757, 0.027, 0.15) if self.state == 'down' else (1, 0.757, 0.027, 0)
+                    Ellipse:
+                        pos: self.pos
+                        size: self.size
+                    Color:
+                        rgba: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                    Line:
+                        circle: (self.center_x, self.center_y, self.width / 2 - dp(1))
+                        width: dp(1.2)
+            
             Label:
                 id: title_label
                 text: '大樂透查詢結果'
                 font_name: 'ChineseFont'
                 font_size: dp(20)
                 bold: True
-                size_hint_x: 0.6
+                size_hint: None, 1
+                width: self.texture_size[0]
                 color: get_color_from_hex('#FFC107')
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            
             Button:
                 id: sort_btn
-                text: '↓降序' if root.sort_order.upper() == 'DESC' else '↑升序'
                 font_name: 'ChineseFont'
                 font_size: dp(12)
                 size_hint_x: 0.2
@@ -462,29 +485,52 @@
         spacing: dp(5)
         
         # 標題和返回按鈕
-        BoxLayout:
+        RelativeLayout:
             size_hint_y: None
-            height: dp(50)
+            height: dp(35)
             
             Button:
-                text: '返回'
+                id: back_btn
+                text: '<'
                 font_name: 'ChineseFont'
-                size_hint_x: 0.2
-                on_press: root.back_to_query()
+                font_size: dp(16)
+                bold: True
+                color: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                size_hint: None, None
+                size: dp(32), dp(32)
+                pos_hint: {'x': 0, 'center_y': 0.5}
+                background_color: (0, 0, 0, 0)
+                background_normal: ''
+                on_release: root.back_to_query()
+                canvas.before:
+                    Color:
+                        rgba: (1, 0.757, 0.027, 0.15) if self.state == 'down' else (1, 0.757, 0.027, 0)
+                    Ellipse:
+                        pos: self.pos
+                        size: self.size
+                    Color:
+                        rgba: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                    Line:
+                        circle: (self.center_x, self.center_y, self.width / 2 - dp(1))
+                        width: dp(1.2)
             
             Label:
                 text: '大樂透自選號'
                 font_name: 'ChineseFont'
-                font_size: dp(24)
+                font_size: dp(20)
                 bold: True
-                size_hint_x: 0.6
+                size_hint: None, 1
+                width: self.texture_size[0]
                 color: get_color_from_hex('#FFC107')
-                halign: 'center'
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
             
             Label:
                 text: f"總數: {len(root.saved_numbers) if root.saved_numbers else 0}"
                 font_name: 'ChineseFont'
-                size_hint_x: 0.2
+                font_size: dp(14)
+                size_hint: None, 1
+                width: self.texture_size[0]
+                pos_hint: {'right': 1, 'center_y': 0.5}
         
         # 自選號列表
         ScrollView:
@@ -512,26 +558,44 @@
         spacing: dp(10)
         
         # 標題和返回按鈕
-        BoxLayout:
-            orientation: 'horizontal'
+        RelativeLayout:
             size_hint_y: None
-            height: dp(40)
-            spacing: dp(10)
+            height: dp(35)
             
             Button:
-                text: '返回'
+                id: back_btn
+                text: '<'
                 font_name: 'ChineseFont'
-                size_hint_x: None
-                width: dp(60)
-                on_press: root.back_to_query()
+                font_size: dp(16)
+                bold: True
+                color: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                size_hint: None, None
+                size: dp(32), dp(32)
+                pos_hint: {'x': 0, 'center_y': 0.5}
+                background_color: (0, 0, 0, 0)
+                background_normal: ''
+                on_release: root.back_to_query()
+                canvas.before:
+                    Color:
+                        rgba: (1, 0.757, 0.027, 0.15) if self.state == 'down' else (1, 0.757, 0.027, 0)
+                    Ellipse:
+                        pos: self.pos
+                        size: self.size
+                    Color:
+                        rgba: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                    Line:
+                        circle: (self.center_x, self.center_y, self.width / 2 - dp(1))
+                        width: dp(1.2)
             
             Label:
                 text: '大樂透重複六碼'
                 font_name: 'ChineseFont'
                 font_size: dp(20)
                 bold: True
+                size_hint: None, 1
+                width: self.texture_size[0]
                 color: get_color_from_hex('#FFC107')
-                halign: 'center'
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
         
         # 說明文字和總筆數
         BoxLayout:
@@ -583,25 +647,44 @@
         spacing: dp(5)
         
         # 標題和返回按鈕
-        BoxLayout:
+        RelativeLayout:
             size_hint_y: None
-            height: dp(40)
+            height: dp(35)
             
             Button:
-                text: '返回'
+                id: back_btn
+                text: '<'
                 font_name: 'ChineseFont'
-                size_hint_x: None
-                width: dp(60)
-                on_press: root.back_to_duplicate()
+                font_size: dp(16)
+                bold: True
+                color: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                size_hint: None, None
+                size: dp(32), dp(32)
+                pos_hint: {'x': 0, 'center_y': 0.5}
+                background_color: (0, 0, 0, 0)
+                background_normal: ''
+                on_release: root.back_to_duplicate()
+                canvas.before:
+                    Color:
+                        rgba: (1, 0.757, 0.027, 0.15) if self.state == 'down' else (1, 0.757, 0.027, 0)
+                    Ellipse:
+                        pos: self.pos
+                        size: self.size
+                    Color:
+                        rgba: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                    Line:
+                        circle: (self.center_x, self.center_y, self.width / 2 - dp(1))
+                        width: dp(1.2)
             
             Label:
                 text: '大樂透重複記錄詳情'
                 font_name: 'ChineseFont'
-                font_size: dp(24)
+                font_size: dp(20)
                 bold: True
-                size_hint_x: 0.6
+                size_hint: None, 1
+                width: self.texture_size[0]
                 color: get_color_from_hex('#FFC107')
-                halign: 'center'
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
         
         # 詳細記錄列表
         ScrollView:
@@ -621,28 +704,54 @@
         spacing: dp(5)
 
         # Top bar
-        BoxLayout:
+        RelativeLayout:
             size_hint_y: None
-            height: dp(40)
+            height: dp(35)
+            
             Button:
-                text: '返回'
+                id: back_btn
+                text: '<'
                 font_name: 'ChineseFont'
-                size_hint_x: 0.2
-                on_press: root.go_back()
+                font_size: dp(16)
+                bold: True
+                color: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                size_hint: None, None
+                size: dp(32), dp(32)
+                pos_hint: {'x': 0, 'center_y': 0.5}
+                background_color: (0, 0, 0, 0)
+                background_normal: ''
+                on_release: root.go_back()
+                canvas.before:
+                    Color:
+                        rgba: (1, 0.757, 0.027, 0.15) if self.state == 'down' else (1, 0.757, 0.027, 0)
+                    Ellipse:
+                        pos: self.pos
+                        size: self.size
+                    Color:
+                        rgba: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                    Line:
+                        circle: (self.center_x, self.center_y, self.width / 2 - dp(1))
+                        width: dp(1.2)
+            
             Label:
                 id: title_label
                 text: '大樂透自選號中獎詳情'
                 font_name: 'ChineseFont'
                 font_size: dp(20)
                 bold: True
-                size_hint_x: 0.6
+                size_hint: None, 1
+                width: self.texture_size[0]
                 color: get_color_from_hex('#FFC107')
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            
             Button:
                 id: sort_btn
-                text: '↓降序' if root.sort_order.upper() == 'DESC' else '↑升序'
                 font_name: 'ChineseFont'
                 font_size: dp(12)
-                size_hint_x: 0.2
+                text: '↓降序' if root.sort_order.upper() == 'DESC' else '↑升序'
+                size_hint: None, None
+                size: dp(70), dp(32)
+                pos_hint: {'right': 1, 'center_y': 0.5}
                 on_press: root.toggle_sort_order()
 
         # Selected numbers

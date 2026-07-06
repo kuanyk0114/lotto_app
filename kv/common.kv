@@ -323,28 +323,50 @@
         padding: dp(10)
         
         # 標題區域
-        BoxLayout:
-            orientation: 'horizontal'
+        RelativeLayout:
             size_hint_y: None
-            height: dp(50)
-            spacing: dp(10)
+            height: dp(35)
             
             Button:
-                text: '返回'
+                id: back_btn
+                text: '<'
                 font_name: 'ChineseFont'
+                font_size: dp(16)
+                bold: True
+                color: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
                 size_hint: None, None
-                size: dp(80), dp(40)
-                on_press: root.go_back() if hasattr(root, 'go_back') else None
+                size: dp(32), dp(32)
+                pos_hint: {'x': 0, 'center_y': 0.5}
+                background_color: (0, 0, 0, 0)
+                background_normal: ''
+                on_release: root.go_back() if hasattr(root, 'go_back') else None
+                canvas.before:
+                    Color:
+                        rgba: (1, 0.757, 0.027, 0.15) if self.state == 'down' else (1, 0.757, 0.027, 0)
+                    Ellipse:
+                        pos: self.pos
+                        size: self.size
+                    Color:
+                        rgba: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                    Line:
+                        circle: (self.center_x, self.center_y, self.width / 2 - dp(1))
+                        width: dp(1.2)
             
             Label:
                 text: root.title if hasattr(root, 'title') else '查詢結果'
                 font_name: 'ChineseFont'
                 font_size: dp(18)
                 bold: True
-                halign: 'center'
+                size_hint: None, 1
+                width: self.texture_size[0]
+                color: get_color_from_hex('#FFC107')
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
             
             SortButton:
                 id: sort_btn
+                size_hint: None, None
+                size: dp(70), dp(32)
+                pos_hint: {'right': 1, 'center_y': 0.5}
         
         # 統計區域（子類可以覆寫）
         BoxLayout:
@@ -383,30 +405,44 @@
         padding: dp(10)
         
         # 標題區域
-        BoxLayout:
-            orientation: 'horizontal'
+        RelativeLayout:
             size_hint_y: None
-            height: dp(50)
-            spacing: dp(10)
+            height: dp(35)
             
             Button:
-                text: '返回'
+                id: back_btn
+                text: '<'
                 font_name: 'ChineseFont'
+                font_size: dp(16)
+                bold: True
+                color: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
                 size_hint: None, None
-                size: dp(80), dp(40)
-                on_press: root.back_to_query() if hasattr(root, 'back_to_query') else None
+                size: dp(32), dp(32)
+                pos_hint: {'x': 0, 'center_y': 0.5}
+                background_color: (0, 0, 0, 0)
+                background_normal: ''
+                on_release: root.back_to_query() if hasattr(root, 'back_to_query') else None
+                canvas.before:
+                    Color:
+                        rgba: (1, 0.757, 0.027, 0.15) if self.state == 'down' else (1, 0.757, 0.027, 0)
+                    Ellipse:
+                        pos: self.pos
+                        size: self.size
+                    Color:
+                        rgba: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                    Line:
+                        circle: (self.center_x, self.center_y, self.width / 2 - dp(1))
+                        width: dp(1.2)
             
             Label:
                 text: root.title if hasattr(root, 'title') else '重複號碼查詢'
                 font_name: 'ChineseFont'
                 font_size: dp(18)
                 bold: True
-                halign: 'center'
-            
-            # 空白區域（不放排序按鈕）
-            Widget:
-                size_hint: None, None
-                size: dp(100), dp(40)
+                size_hint: None, 1
+                width: self.texture_size[0]
+                color: get_color_from_hex('#FFC107')
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
         
         # 統計區域
         BoxLayout:

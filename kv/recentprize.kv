@@ -67,16 +67,34 @@
         spacing: dp(5)
         
         # 頂部導航與下拉選單
-        BoxLayout:
+        RelativeLayout:
             size_hint_y: None
-            height: dp(40)
-            spacing: dp(5)
+            height: dp(35)
             
             Button:
-                text: '返回'
+                id: back_btn
+                text: '<'
                 font_name: 'ChineseFont'
-                size_hint_x: 0.2
-                on_press: root.go_back()
+                font_size: dp(16)
+                bold: True
+                color: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                size_hint: None, None
+                size: dp(32), dp(32)
+                pos_hint: {'x': 0, 'center_y': 0.5}
+                background_color: (0, 0, 0, 0)
+                background_normal: ''
+                on_release: root.go_back()
+                canvas.before:
+                    Color:
+                        rgba: (1, 0.757, 0.027, 0.15) if self.state == 'down' else (1, 0.757, 0.027, 0)
+                    Ellipse:
+                        pos: self.pos
+                        size: self.size
+                    Color:
+                        rgba: (1, 0.757, 0.027, 1) if self.state == 'down' else (1, 0.757, 0.027, 0.6)
+                    Line:
+                        circle: (self.center_x, self.center_y, self.width / 2 - dp(1))
+                        width: dp(1.2)
             
             Label:
                 id: title_label
@@ -84,11 +102,10 @@
                 font_name: 'ChineseFont'
                 font_size: dp(18)
                 bold: True
-                size_hint_x: 0.5
+                size_hint: None, 1
+                width: self.texture_size[0]
                 color: get_color_from_hex('#FFC107')
-                halign: 'center'
-                valign: 'middle'
-                text_size: (self.width, self.height)
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
             
             Spinner:
                 id: type_spinner
@@ -96,7 +113,9 @@
                 values: ['威力彩', '大樂透', '今彩539', '3星彩', '4星彩']
                 font_name: 'ChineseFont'
                 font_size: dp(14)
-                size_hint_x: 0.3
+                size_hint: None, None
+                size: dp(90), dp(32)
+                pos_hint: {'right': 1, 'center_y': 0.5}
                 background_color: get_color_from_hex('#1565C0')
                 color: (1, 1, 1, 1)
                 on_text: root.on_lottery_type_change(self.text)
